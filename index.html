@@ -406,6 +406,63 @@
     }
     .btn-save:active { transform: scale(.98); opacity: .88; }
 
+    /* Delete button inside edit sheet */
+    .btn-delete {
+      width: 100%; padding: 13px;
+      border-radius: var(--r);
+      background: var(--red-bg);
+      color: var(--red);
+      border: 1px solid rgba(244,63,94,.25);
+      font-size: 14px; font-weight: 700;
+      transition: opacity .18s var(--ease), transform .12s var(--ease);
+      margin-top: 8px;
+    }
+    .btn-delete:active { transform: scale(.98); opacity: .8; }
+
+    /* Action sheet (edit / delete options) */
+    .action-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      border-radius: var(--r);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 14px; font-weight: 600;
+      cursor: pointer;
+      transition: background .15s var(--ease);
+    }
+    .action-item:active { background: #1c2128; }
+    .action-item .ai-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+
+    /* Editable home title */
+    .header-title-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none; cursor: pointer;
+      font-size: 22px; font-weight: 800; letter-spacing: -.4px;
+      color: var(--text);
+      padding: 0;
+    }
+    .header-title-btn .edit-ico {
+      font-size: 13px; color: var(--faint);
+      opacity: 0; transition: opacity .2s;
+    }
+    .header-title-btn:hover .edit-ico { opacity: 1; }
+
+    /* Edit tx icon on each row */
+    .tx-edit-btn {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      color: var(--faint);
+      flex-shrink: 0;
+      transition: background .15s var(--ease), color .15s var(--ease);
+    }
+    .tx-item:hover .tx-edit-btn { background: var(--border); color: var(--muted); }
+
     /* ─── TOAST ──────────────────────────────────────── */
     #toast {
       position: absolute;
@@ -435,7 +492,10 @@
     <div class="header-row">
       <div>
         <div class="header-month" id="hdr-month">Julio 2026</div>
-        <div class="header-title">Home Finance 🏠</div>
+        <button class="header-title-btn" onclick="openNameSheet()" title="Editar nombre del hogar">
+          <span id="hdr-name">Home Finance 🏠</span>
+          <i class="fa-solid fa-pen edit-ico"></i>
+        </button>
       </div>
     </div>
 
@@ -570,6 +630,65 @@
     </div>
   </div>
 
+  <!-- ══ MODAL: EDITAR TRANSACCIÓN ══════════════════════════ -->
+  <div class="overlay" id="edit-overlay" onclick="closeOnBg(event,'edit-overlay')">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-title">Editar transacción</div>
+
+      <div class="type-toggle">
+        <button class="tt-btn sel-exp" id="et-exp" onclick="setEditType('expense')">
+          <i class="fa-solid fa-arrow-trend-down" style="margin-right:5px;"></i>Gasto
+        </button>
+        <button class="tt-btn" id="et-inc" onclick="setEditType('income')">
+          <i class="fa-solid fa-arrow-trend-up" style="margin-right:5px;"></i>Ingreso
+        </button>
+      </div>
+
+      <div class="field">
+        <label class="label" for="ef-amount">Importe (€)</label>
+        <input class="inp big" type="number" inputmode="decimal" id="ef-amount" placeholder="0,00" min="0" step="0.01" />
+      </div>
+
+      <div class="field">
+        <label class="label" for="ef-desc">Descripción</label>
+        <input class="inp" type="text" id="ef-desc" placeholder="Ej: Mercadona" maxlength="60" />
+      </div>
+
+      <div class="field">
+        <label class="label">Categoría</label>
+        <div class="cat-grid" id="edit-cat-grid"></div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="ef-date">Fecha</label>
+        <input class="inp" type="date" id="ef-date" />
+      </div>
+
+      <button class="btn-save" onclick="updateTransaction()">
+        <i class="fa-solid fa-check" style="margin-right:7px;"></i>Guardar cambios
+      </button>
+      <button class="btn-delete" onclick="deleteTransaction()">
+        <i class="fa-solid fa-trash" style="margin-right:7px;"></i>Eliminar transacción
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: NOMBRE DEL HOGAR ══════════════════════════════ -->
+  <div class="overlay" id="name-overlay" onclick="closeOnBg(event,'name-overlay')">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-title">Nombre del hogar</div>
+      <div class="field">
+        <label class="label" for="f-homename">Cómo se llama tu hogar</label>
+        <input class="inp" type="text" id="f-homename" placeholder="Ej: Casa Familia García" maxlength="40" />
+      </div>
+      <button class="btn-save" onclick="saveHomeName()">
+        <i class="fa-solid fa-check" style="margin-right:7px;"></i>Guardar
+      </button>
+    </div>
+  </div>
+
   <!-- ══ TOAST ════════════════════════════════════════════ -->
   <div id="toast"></div>
 
@@ -608,21 +727,27 @@ const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto'
 ═══════════════════════════════════════════════════════════ */
 let transactions = [];
 let limits       = {};          // { "2026-07": { alimentacion:500, ... } }
+let homeName     = 'Home Finance 🏠';
 let txType       = 'expense';
 let selCat       = 'alimentacion';
+let editTxType   = 'expense';
+let editSelCat   = 'alimentacion';
+let editingTxId  = null;
 
 /* ═══════════════════════════════════════════════════════════
    STORAGE  (swap keys with Firebase later)
 ═══════════════════════════════════════════════════════════ */
 function load() {
   try {
-    transactions = JSON.parse(localStorage.getItem('hf2_tx')  || '[]');
-    limits       = JSON.parse(localStorage.getItem('hf2_lim') || '{}');
+    transactions = JSON.parse(localStorage.getItem('hf2_tx')   || '[]');
+    limits       = JSON.parse(localStorage.getItem('hf2_lim')  || '{}');
+    homeName     = localStorage.getItem('hf2_name') || 'Home Finance 🏠';
   } catch(e) {}
 }
 function save() {
-  localStorage.setItem('hf2_tx',  JSON.stringify(transactions));
-  localStorage.setItem('hf2_lim', JSON.stringify(limits));
+  localStorage.setItem('hf2_tx',   JSON.stringify(transactions));
+  localStorage.setItem('hf2_lim',  JSON.stringify(limits));
+  localStorage.setItem('hf2_name', homeName);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -704,13 +829,14 @@ function renderHome() {
     const sign = t.type==='expense' ? '-' : '+';
     const cls  = t.type==='expense' ? 'red' : 'green';
     return `
-      <div class="tx-item">
+      <div class="tx-item" onclick="openEditSheet(${t.id})">
         <div class="tx-icon" style="background:${cat.bg}">${cat.e}</div>
         <div class="tx-info">
           <div class="tx-name">${esc(t.desc)}</div>
           <div class="tx-meta">${fmtDate(t.date)} · ${cat.label}</div>
         </div>
         <div class="tx-amount ${cls}">${sign}€ ${fmt(t.amount)}</div>
+        <div class="tx-edit-btn"><i class="fa-solid fa-pen-to-square"></i></div>
       </div>`;
   }).join('');
 }
@@ -809,6 +935,93 @@ function saveTransaction() {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   MODAL: EDIT TRANSACTION
+═══════════════════════════════════════════════════════════ */
+function openEditSheet(id) {
+  const tx = transactions.find(t => t.id === id);
+  if (!tx) return;
+  editingTxId = id;
+
+  document.getElementById('ef-amount').value = tx.amount;
+  document.getElementById('ef-desc').value   = tx.desc;
+  document.getElementById('ef-date').value   = tx.date;
+  setEditType(tx.type);
+  editSelCat = tx.category;
+  renderEditCatGrid();
+
+  document.getElementById('edit-overlay').classList.add('open');
+}
+
+function setEditType(type) {
+  editTxType = type;
+  document.getElementById('et-exp').className = 'tt-btn'+(type==='expense'?' sel-exp':'');
+  document.getElementById('et-inc').className = 'tt-btn'+(type==='income' ?' sel-inc':'');
+  if (type !== editTxType || !editSelCat) {
+    editSelCat = type==='expense' ? 'alimentacion' : 'nomina';
+  }
+  renderEditCatGrid();
+}
+
+function renderEditCatGrid() {
+  const ids  = editTxType==='expense' ? EXP_IDS : INC_IDS;
+  const cats = CATS.filter(c=>ids.includes(c.id));
+  document.getElementById('edit-cat-grid').innerHTML = cats.map(cat=>`
+    <button class="cat-btn ${editSelCat===cat.id?'sel':''}" onclick="pickEditCat('${cat.id}')">
+      <span class="ce">${cat.e}</span>
+      <span class="cl">${cat.label}</span>
+    </button>`).join('');
+}
+
+function pickEditCat(id) { editSelCat=id; renderEditCatGrid(); }
+
+function updateTransaction() {
+  const amount = parseFloat(document.getElementById('ef-amount').value);
+  const desc   = document.getElementById('ef-desc').value.trim();
+  const date   = document.getElementById('ef-date').value;
+
+  if (!amount||amount<=0) { toast('⚠ Introduce un importe válido',false); return; }
+  if (!desc)              { toast('⚠ Escribe una descripción',false);     return; }
+  if (!date)              { toast('⚠ Selecciona una fecha',false);        return; }
+
+  const idx = transactions.findIndex(t => t.id === editingTxId);
+  if (idx === -1) return;
+
+  transactions[idx] = { ...transactions[idx], type:editTxType, amount, desc, category:editSelCat, date };
+  save();
+  closeSheet('edit-overlay');
+  renderHome();
+  toast('✅ Transacción actualizada');
+}
+
+function deleteTransaction() {
+  if (!confirm('¿Eliminar esta transacción?')) return;
+  transactions = transactions.filter(t => t.id !== editingTxId);
+  save();
+  closeSheet('edit-overlay');
+  renderHome();
+  toast('🗑 Transacción eliminada');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL: NOMBRE DEL HOGAR
+═══════════════════════════════════════════════════════════ */
+function openNameSheet() {
+  document.getElementById('f-homename').value = homeName;
+  document.getElementById('name-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('f-homename').focus(), 320);
+}
+
+function saveHomeName() {
+  const val = document.getElementById('f-homename').value.trim();
+  if (!val) { toast('⚠ El nombre no puede estar vacío',false); return; }
+  homeName = val;
+  document.getElementById('hdr-name').textContent = homeName;
+  save();
+  closeSheet('name-overlay');
+  toast('🏠 Nombre guardado');
+}
+
+/* ═══════════════════════════════════════════════════════════
    MODAL: EDIT LIMITS
 ═══════════════════════════════════════════════════════════ */
 function openLimitsSheet() {
@@ -876,6 +1089,8 @@ function seedDemo() {
   load();
   if (!transactions.length) seedDemo();
   renderCatGrid();
+  renderEditCatGrid();
+  document.getElementById('hdr-name').textContent = homeName;
   renderHome();
 })();
 </script>
