@@ -1,265 +1,883 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Economía Familiar</title>
-    
-    <!-- Tailwind CSS para un diseño rápido, moderno y responsive -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- FontAwesome para los iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Home Finance</title>
+  <meta name="description" content="App de economía familiar: controla ingresos, gastos y presupuesto mensual" />
 
-    <!-- Configuración personalizada de Tailwind -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            900: '#14532d',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    <style>
-        /* Evitar el scroll elástico en móviles para que parezca una app nativa */
-        body {
-            overscroll-behavior-y: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        /* Ocultar barra de scroll pero mantener funcionalidad */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+  <style>
+    /* ─── TOKENS ─────────────────────────────────────── */
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    #21262d;
+      --border2:   #30363d;
+      --accent:    #7c3aed;
+      --accent2:   #8b5cf6;
+      --glow:      rgba(124,58,237,.28);
+      --green:     #10b981;
+      --green-bg:  rgba(16,185,129,.12);
+      --red:       #f43f5e;
+      --red-bg:    rgba(244,63,94,.12);
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --faint:     #484f58;
+      --r:         12px;
+      --rL:        18px;
+      --rF:        9999px;
+      --ease:      cubic-bezier(.4,0,.2,1);
+    }
 
-        /* Animación suave para cambiar de pantallas */
-        .fade-in {
-            animation: fadeIn 0.3s ease-in-out;
-        }
+    /* ─── RESET ──────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #080b0f;
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    input  { font-family: inherit; }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+    /* ─── APP SHELL ──────────────────────────────────── */
+    #app {
+      width: 100%; max-width: 420px;
+      height: 100%; max-height: 920px;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 0 60px rgba(124,58,237,.12), 0 0 0 1px var(--border);
+    }
 
-        .view-section {
-            display: none;
-        }
-        
-        .view-section.active {
-            display: block;
-        }
-    </style>
+    /* ─── SCROLL HELPERS ─────────────────────────────── */
+    .scroll { overflow-y: auto; overflow-x: hidden; }
+    .scroll::-webkit-scrollbar { display: none; }
+    .scroll { scrollbar-width: none; }
+
+    /* ─── HEADER ─────────────────────────────────────── */
+    header {
+      padding: 48px 20px 18px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .header-month {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .header-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -.4px;
+    }
+
+    /* Balance card */
+    .card-balance {
+      background: linear-gradient(135deg,#1e0a40,#2d1060 60%,#160b52);
+      border: 1px solid rgba(139,92,246,.3);
+      border-radius: var(--rL);
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-balance::before {
+      content:'';
+      position: absolute; top:-50px; right:-50px;
+      width:160px; height:160px;
+      background: radial-gradient(circle,rgba(139,92,246,.22),transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .bal-label {
+      font-size: 10px; font-weight: 600;
+      color: rgba(139,92,246,.75);
+      text-transform: uppercase; letter-spacing: 1.1px;
+      margin-bottom: 6px;
+    }
+    .bal-amount {
+      font-size: 36px; font-weight: 800;
+      color: #fff; letter-spacing: -1.5px; line-height: 1;
+      margin-bottom: 14px;
+      position: relative; z-index: 1;
+    }
+    .bal-amount .sym {
+      font-size: 20px; font-weight: 600;
+      color: rgba(255,255,255,.55); margin-right: 3px;
+      vertical-align: top; line-height: 1.7;
+    }
+
+    .bal-row {
+      display: flex; gap: 20px;
+      border-top: 1px solid rgba(255,255,255,.1);
+      padding-top: 12px;
+      position: relative; z-index: 1;
+    }
+    .bal-item { display: flex; flex-direction: column; gap: 3px; }
+    .bal-item-label {
+      font-size: 9px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .5px;
+      color: rgba(255,255,255,.4);
+    }
+    .bal-item-val { font-size: 14px; font-weight: 700; }
+    .bal-item-val.green { color: var(--green); }
+    .bal-item-val.red   { color: var(--red);   }
+    .bal-item-val.violet{ color: var(--accent2);}
+
+    /* ─── TAB BAR ────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .tab {
+      flex: 1;
+      padding: 12px 0;
+      font-size: 12px; font-weight: 600;
+      color: var(--faint);
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      transition: color .2s var(--ease);
+      position: relative;
+    }
+    .tab i { font-size: 16px; }
+    .tab.active { color: var(--accent2); }
+    .tab.active::after {
+      content: '';
+      position: absolute; bottom: 0; left: 20%; right: 20%;
+      height: 2px;
+      background: var(--accent2);
+      border-radius: var(--rF);
+    }
+
+    /* ─── MAIN ───────────────────────────────────────── */
+    main {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .view {
+      position: absolute; inset: 0;
+      display: none;
+      padding: 18px;
+      overflow-y: auto; overflow-x: hidden;
+    }
+    .view::-webkit-scrollbar { display: none; }
+    .view { scrollbar-width: none; }
+    .view.active {
+      display: block;
+      animation: fadeUp .25s var(--ease) both;
+    }
+    /* Bottom padding so last card isn't hidden behind FAB */
+    .view { padding-bottom: 88px; }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* ─── SECTION HEADER ─────────────────────────────── */
+    .sec-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .sec-title { font-size: 14px; font-weight: 700; }
+    .sec-link  {
+      font-size: 11px; font-weight: 600;
+      color: var(--accent2);
+      background: rgba(139,92,246,.1);
+      padding: 4px 10px; border-radius: var(--rF);
+    }
+
+    /* ─── TRANSACTION ITEM ───────────────────────────── */
+    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .tx-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 12px;
+      display: flex; align-items: center; gap: 11px;
+      cursor: pointer;
+      transition: background .18s var(--ease), transform .12s var(--ease);
+    }
+    .tx-item:active { background: #1c2128; transform: scale(.98); }
+
+    .tx-icon {
+      width: 40px; height: 40px;
+      border-radius: var(--r);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px; flex-shrink: 0;
+    }
+    .tx-info   { flex: 1; min-width: 0; }
+    .tx-name   { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tx-meta   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .tx-amount { font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .tx-amount.green { color: var(--green); }
+    .tx-amount.red   { color: var(--red);   }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--muted);
+    }
+    .empty .ico { font-size: 44px; opacity: .35; margin-bottom: 12px; display: block; }
+    .empty h4   { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .empty p    { font-size: 12px; line-height: 1.5; }
+
+    /* ─── BUDGET VIEW ────────────────────────────────── */
+    .budget-summary {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px; margin-bottom: 18px;
+    }
+    .bsum-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 12px 8px; text-align: center;
+    }
+    .bsum-val   { font-size: 15px; font-weight: 800; margin-bottom: 3px; }
+    .bsum-label { font-size: 9px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+
+    .budget-list { display: flex; flex-direction: column; gap: 9px; }
+
+    .bcat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 12px;
+    }
+    .bcat.over { border-color: rgba(244,63,94,.4); }
+
+    .bcat-top { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+    .bcat-ico  {
+      width: 34px; height: 34px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .bcat-info  { flex: 1; }
+    .bcat-name  { font-size: 13px; font-weight: 600; }
+    .bcat-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .bcat-pct   { font-size: 13px; font-weight: 700; }
+
+    .bar-track  { height: 6px; background: var(--border); border-radius: var(--rF); overflow: hidden; }
+    .bar-fill   { height: 100%; border-radius: var(--rF); transition: width .7s var(--ease); }
+
+    /* ─── FAB ────────────────────────────────────────── */
+    #fab {
+      position: absolute;
+      bottom: 18px; right: 18px;
+      width: 54px; height: 54px;
+      border-radius: var(--rF);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 24px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px var(--glow);
+      z-index: 30;
+      transition: transform .18s var(--ease), box-shadow .18s var(--ease);
+    }
+    #fab:hover  { transform: scale(1.07); box-shadow: 0 6px 28px rgba(124,58,237,.5); }
+    #fab:active { transform: scale(.93); }
+
+    /* ─── BOTTOM SHEET MODAL ─────────────────────────── */
+    .overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,.72);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex; align-items: flex-end;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s var(--ease);
+    }
+    .overlay.open { opacity: 1; pointer-events: all; }
+
+    .sheet {
+      width: 100%;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-radius: 22px 22px 0 0;
+      padding: 12px 20px 32px;
+      transform: translateY(100%);
+      transition: transform .3s var(--ease);
+      max-height: 88vh;
+      overflow-y: auto;
+    }
+    .sheet::-webkit-scrollbar { display: none; }
+    .overlay.open .sheet { transform: translateY(0); }
+
+    .handle {
+      width: 36px; height: 4px;
+      background: var(--border2);
+      border-radius: var(--rF);
+      margin: 0 auto 18px;
+    }
+    .sheet-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 18px; }
+
+    /* Type toggle */
+    .type-toggle {
+      display: flex; gap: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 4px; margin-bottom: 18px;
+    }
+    .tt-btn {
+      flex: 1; padding: 10px;
+      border-radius: 8px;
+      font-size: 13px; font-weight: 700;
+      color: var(--muted);
+      transition: all .2s var(--ease);
+    }
+    .tt-btn.sel-exp { background: var(--red-bg);   color: var(--red);   border: 1px solid rgba(244,63,94,.25); }
+    .tt-btn.sel-inc { background: var(--green-bg); color: var(--green); border: 1px solid rgba(16,185,129,.25); }
+
+    /* Form */
+    .field { margin-bottom: 14px; }
+    .label {
+      display: block;
+      font-size: 10px; font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase; letter-spacing: .8px;
+      margin-bottom: 6px;
+    }
+    .inp {
+      width: 100%;
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: var(--r); color: var(--text);
+      font-size: 15px; font-weight: 600;
+      padding: 13px 15px; outline: none;
+      transition: border-color .18s var(--ease), box-shadow .18s var(--ease);
+      -webkit-appearance: none;
+    }
+    .inp:focus  { border-color: var(--accent2); box-shadow: 0 0 0 3px var(--glow); }
+    .inp.big    { font-size: 30px; font-weight: 800; text-align: center; padding: 14px; letter-spacing: -1px; }
+
+    /* Category grid */
+    .cat-grid {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 8px;
+    }
+    .cat-btn {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      padding: 9px 4px;
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      transition: all .18s var(--ease);
+    }
+    .cat-btn.sel { border-color: var(--accent2); background: rgba(139,92,246,.1); }
+    .cat-btn .ce { font-size: 20px; }
+    .cat-btn .cl { font-size: 9px; font-weight: 600; color: var(--muted); text-align: center; line-height: 1.3; }
+    .cat-btn.sel .cl { color: var(--accent2); }
+
+    /* Submit */
+    .btn-save {
+      width: 100%; padding: 14px;
+      border-radius: var(--r);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; font-size: 15px; font-weight: 700;
+      box-shadow: 0 4px 16px var(--glow);
+      transition: opacity .18s var(--ease), transform .12s var(--ease);
+      margin-top: 6px;
+    }
+    .btn-save:active { transform: scale(.98); opacity: .88; }
+
+    /* ─── TOAST ──────────────────────────────────────── */
+    #toast {
+      position: absolute;
+      bottom: 86px; left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: var(--r);
+      padding: 10px 18px;
+      font-size: 13px; font-weight: 600;
+      box-shadow: 0 4px 20px rgba(0,0,0,.4);
+      opacity: 0; pointer-events: none;
+      transition: all .25s var(--ease);
+      z-index: 200; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+
+  <!-- FontAwesome icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
-<body class="bg-gray-100 text-gray-800 h-screen w-screen overflow-hidden flex justify-center">
 
-    <!-- Contenedor principal simulando la pantalla de un móvil -->
-    <div class="w-full max-w-md h-full bg-gray-50 flex flex-col relative shadow-2xl overflow-hidden">
-        
-        <!-- HEADER -->
-        <header class="bg-white px-6 pt-8 pb-4 rounded-b-3xl shadow-sm z-10">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h1 class="text-xl font-bold text-gray-800">Hola, Familia 👋</h1>
-                    <p class="text-sm text-gray-500">Resumen financiero</p>
-                </div>
-                <div class="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center text-brand-600">
-                    <i class="fa-solid fa-bell"></i>
-                </div>
-            </div>
+<body>
+<div id="app">
 
-            <!-- Tarjeta de Saldo Principal -->
-            <div class="bg-gradient-to-r from-brand-500 to-brand-600 rounded-2xl p-6 text-white shadow-lg shadow-brand-500/30">
-                <p class="text-brand-100 text-sm mb-1 font-medium">Saldo Total Disponible</p>
-                <h2 class="text-4xl font-bold mb-4">€ 2,450.50</h2>
-                
-                <div class="flex justify-between items-center border-t border-white/20 pt-4 mt-2">
-                    <div>
-                        <p class="text-xs text-brand-100">Ingresos (Mes)</p>
-                        <p class="font-semibold flex items-center gap-1">
-                            <i class="fa-solid fa-arrow-trend-up text-xs"></i> € 3,200.00
-                        </p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-brand-100">Gastos (Mes)</p>
-                        <p class="font-semibold flex items-center gap-1">
-                            <i class="fa-solid fa-arrow-trend-down text-xs"></i> € 749.50
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- ÁREA DE CONTENIDO (Vistas) -->
-        <main class="flex-1 overflow-y-auto no-scrollbar pb-24 px-6 pt-6">
-            
-            <!-- VISTA 1: Inicio (Dashboard) -->
-            <section id="view-home" class="view-section active fade-in">
-                <div class="flex justify-between items-end mb-4">
-                    <h3 class="font-bold text-gray-800">Movimientos Recientes</h3>
-                    <button class="text-sm text-brand-600 font-medium">Ver todos</button>
-                </div>
-
-                <!-- Lista de transacciones -->
-                <div class="space-y-4" id="transactions-list">
-                    <!-- Transacción 1 -->
-                    <div class="bg-white p-4 rounded-xl shadow-sm flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 flex-shrink-0">
-                            <i class="fa-solid fa-cart-shopping"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h4 class="font-bold text-gray-800 text-sm">Mercadona</h4>
-                            <p class="text-xs text-gray-500">Hoy, 10:30 AM • Alimentación</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-red-500">-€ 65.30</p>
-                        </div>
-                    </div>
-
-                    <!-- Transacción 2 -->
-                    <div class="bg-white p-4 rounded-xl shadow-sm flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 flex-shrink-0">
-                            <i class="fa-solid fa-bolt"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h4 class="font-bold text-gray-800 text-sm">Recibo Luz Iberdrola</h4>
-                            <p class="text-xs text-gray-500">Ayer • Domiciliado</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-red-500">-€ 42.00</p>
-                        </div>
-                    </div>
-
-                    <!-- Transacción 3 -->
-                    <div class="bg-white p-4 rounded-xl shadow-sm flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-500 flex-shrink-0">
-                            <i class="fa-solid fa-briefcase"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h4 class="font-bold text-gray-800 text-sm">Nómina</h4>
-                            <p class="text-xs text-gray-500">12 Jul • Ingreso</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-green-500">+€ 1,800.00</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- VISTA 2: Tarjetas -->
-            <section id="view-cards" class="view-section fade-in">
-                <h3 class="font-bold text-gray-800 mb-4">Mis Tarjetas</h3>
-                <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-5 text-white mb-4 shadow-lg">
-                    <div class="flex justify-between items-center mb-6">
-                        <i class="fa-brands fa-cc-visa text-3xl"></i>
-                        <span class="text-xs bg-white/20 px-2 py-1 rounded">Crédito</span>
-                    </div>
-                    <p class="text-sm text-gray-300">Deuda actual</p>
-                    <h4 class="text-2xl font-bold mb-2">€ 320.00</h4>
-                    <div class="flex justify-between text-xs text-gray-400">
-                        <span>Límite: € 2,000</span>
-                        <span>Corte: Día 20</span>
-                    </div>
-                </div>
-                <p class="text-sm text-gray-500 text-center mt-6">Próximamente conectaremos esto con Firebase.</p>
-            </section>
-
-            <!-- VISTA 3: Calendario -->
-            <section id="view-calendar" class="view-section fade-in">
-                <h3 class="font-bold text-gray-800 mb-4">Próximos Pagos</h3>
-                <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-yellow-500 mb-3">
-                    <div class="flex justify-between">
-                        <div>
-                            <h4 class="font-bold text-sm">Internet / Móvil</h4>
-                            <p class="text-xs text-gray-500">Vence en 3 días (Día 18)</p>
-                        </div>
-                        <p class="font-bold text-gray-800">€ 45.00</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-gray-300 opacity-60">
-                    <div class="flex justify-between">
-                        <div>
-                            <h4 class="font-bold text-sm">Hipoteca / Alquiler</h4>
-                            <p class="text-xs text-gray-500">Pagado este mes (Día 5)</p>
-                        </div>
-                        <p class="font-bold text-gray-800">€ 650.00</p>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- BOTÓN FLOTANTE PARA AÑADIR GASTO -->
-        <button class="absolute bottom-20 right-6 w-14 h-14 bg-brand-500 hover:bg-brand-600 text-white rounded-full shadow-lg shadow-brand-500/40 flex items-center justify-center text-xl transition-transform active:scale-95 z-20">
-            <i class="fa-solid fa-plus"></i>
-        </button>
-
-        <!-- BARRA DE NAVEGACIÓN INFERIOR -->
-        <nav class="absolute bottom-0 w-full bg-white border-t border-gray-100 flex justify-around items-center h-16 z-20 pb-safe">
-            <button onclick="switchView('home', this)" class="nav-btn text-brand-600 flex flex-col items-center justify-center w-full h-full">
-                <i class="fa-solid fa-house text-xl mb-1"></i>
-                <span class="text-[10px] font-medium">Inicio</span>
-            </button>
-            <button onclick="switchView('cards', this)" class="nav-btn text-gray-400 hover:text-gray-600 transition-colors flex flex-col items-center justify-center w-full h-full">
-                <i class="fa-solid fa-credit-card text-xl mb-1"></i>
-                <span class="text-[10px] font-medium">Tarjetas</span>
-            </button>
-            <button onclick="switchView('calendar', this)" class="nav-btn text-gray-400 hover:text-gray-600 transition-colors flex flex-col items-center justify-center w-full h-full">
-                <i class="fa-solid fa-calendar-days text-xl mb-1"></i>
-                <span class="text-[10px] font-medium">Calendario</span>
-            </button>
-            <button class="nav-btn text-gray-400 hover:text-gray-600 transition-colors flex flex-col items-center justify-center w-full h-full">
-                <i class="fa-solid fa-gear text-xl mb-1"></i>
-                <span class="text-[10px] font-medium">Ajustes</span>
-            </button>
-        </nav>
-
+  <!-- ══ HEADER ══════════════════════════════════════════ -->
+  <header>
+    <div class="header-row">
+      <div>
+        <div class="header-month" id="hdr-month">Julio 2026</div>
+        <div class="header-title">Home Finance 🏠</div>
+      </div>
     </div>
 
-    <!-- LOGICA DE LA APP (JavaScript) -->
-    <script>
-        /**
-         * Función para cambiar entre las diferentes pantallas de la app.
-         * @param {string} viewId - El identificador de la vista (home, cards, calendar)
-         * @param {HTMLElement} btnElement - El botón que fue pulsado
-         */
-        function switchView(viewId, btnElement) {
-            // 1. Ocultar todas las secciones
-            const sections = document.querySelectorAll('.view-section');
-            sections.forEach(section => {
-                section.classList.remove('active');
-            });
+    <!-- Balance card -->
+    <div class="card-balance">
+      <div class="bal-label">Saldo disponible este mes</div>
+      <div class="bal-amount"><span class="sym">€</span><span id="bal-total">0,00</span></div>
+      <div class="bal-row">
+        <div class="bal-item">
+          <span class="bal-item-label">↑ Ingresos</span>
+          <span class="bal-item-val green" id="bal-inc">€ 0,00</span>
+        </div>
+        <div class="bal-item">
+          <span class="bal-item-label">↓ Gastos</span>
+          <span class="bal-item-val red" id="bal-exp">€ 0,00</span>
+        </div>
+        <div class="bal-item">
+          <span class="bal-item-label">💰 Ahorro</span>
+          <span class="bal-item-val violet" id="bal-sav">€ 0,00</span>
+        </div>
+      </div>
+    </div>
+  </header>
 
-            // 2. Mostrar la sección seleccionada
-            const activeSection = document.getElementById(`view-${viewId}`);
-            if (activeSection) {
-                activeSection.classList.add('active');
-            }
+  <!-- ══ TAB BAR ═════════════════════════════════════════ -->
+  <div class="tabs">
+    <button class="tab active" id="tab-home"   onclick="goTab('home',   this)"><i class="fa-solid fa-list"></i>Movimientos</button>
+    <button class="tab"        id="tab-budget" onclick="goTab('budget', this)"><i class="fa-solid fa-chart-pie"></i>Presupuesto</button>
+  </div>
 
-            // 3. Actualizar el estilo de los botones de navegación
-            const allBtns = document.querySelectorAll('.nav-btn');
-            allBtns.forEach(btn => {
-                btn.classList.remove('text-brand-600');
-                btn.classList.add('text-gray-400');
-            });
+  <!-- ══ MAIN ════════════════════════════════════════════ -->
+  <main>
 
-            // 4. Resaltar el botón activo
-            btnElement.classList.remove('text-gray-400');
-            btnElement.classList.add('text-brand-600');
-        }
-    </script>
+    <!-- VIEW: MOVIMIENTOS -->
+    <div class="view active" id="view-home">
+      <div class="sec-header">
+        <span class="sec-title">Este mes</span>
+        <span id="tx-count" style="font-size:11px;color:var(--muted);">0 movimientos</span>
+      </div>
+      <div class="tx-list" id="tx-list"></div>
+    </div>
+
+    <!-- VIEW: PRESUPUESTO -->
+    <div class="view" id="view-budget">
+
+      <!-- Summary -->
+      <div class="budget-summary">
+        <div class="bsum-card">
+          <div class="bsum-val red"    id="b-spent">€ 0</div>
+          <div class="bsum-label">Gastado</div>
+        </div>
+        <div class="bsum-card">
+          <div class="bsum-val" style="color:var(--accent2)" id="b-limit">€ 0</div>
+          <div class="bsum-label">Límite</div>
+        </div>
+        <div class="bsum-card">
+          <div class="bsum-val green" id="b-left">€ 0</div>
+          <div class="bsum-label">Restante</div>
+        </div>
+      </div>
+
+      <div class="sec-header" style="margin-bottom:10px;">
+        <span class="sec-title">Por categoría</span>
+        <button class="sec-link" onclick="openLimitsSheet()">Editar límites</button>
+      </div>
+
+      <div class="budget-list" id="budget-list"></div>
+    </div>
+
+  </main>
+
+  <!-- FAB -->
+  <button id="fab" onclick="openAddSheet()" aria-label="Añadir transacción">
+    <i class="fa-solid fa-plus"></i>
+  </button>
+
+  <!-- ══ MODAL: AÑADIR TRANSACCIÓN ═══════════════════════ -->
+  <div class="overlay" id="add-overlay" onclick="closeOnBg(event,'add-overlay')">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-title">Nueva transacción</div>
+
+      <!-- Gasto / Ingreso -->
+      <div class="type-toggle">
+        <button class="tt-btn sel-exp" id="tt-exp" onclick="setType('expense')">
+          <i class="fa-solid fa-arrow-trend-down" style="margin-right:5px;"></i>Gasto
+        </button>
+        <button class="tt-btn" id="tt-inc" onclick="setType('income')">
+          <i class="fa-solid fa-arrow-trend-up" style="margin-right:5px;"></i>Ingreso
+        </button>
+      </div>
+
+      <!-- Importe -->
+      <div class="field">
+        <label class="label" for="f-amount">Importe (€)</label>
+        <input class="inp big" type="number" inputmode="decimal" id="f-amount" placeholder="0,00" min="0" step="0.01" />
+      </div>
+
+      <!-- Descripción -->
+      <div class="field">
+        <label class="label" for="f-desc">Descripción</label>
+        <input class="inp" type="text" id="f-desc" placeholder="Ej: Mercadona" maxlength="60" />
+      </div>
+
+      <!-- Categoría -->
+      <div class="field">
+        <label class="label">Categoría</label>
+        <div class="cat-grid" id="cat-grid"></div>
+      </div>
+
+      <!-- Fecha -->
+      <div class="field">
+        <label class="label" for="f-date">Fecha</label>
+        <input class="inp" type="date" id="f-date" />
+      </div>
+
+      <button class="btn-save" onclick="saveTransaction()">
+        <i class="fa-solid fa-check" style="margin-right:7px;"></i>Guardar
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: EDITAR LÍMITES ════════════════════════════ -->
+  <div class="overlay" id="limits-overlay" onclick="closeOnBg(event,'limits-overlay')">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-title">Presupuesto mensual</div>
+      <div id="limits-list" style="display:flex;flex-direction:column;gap:9px;margin-bottom:16px;"></div>
+      <button class="btn-save" onclick="saveLimits()">
+        <i class="fa-solid fa-floppy-disk" style="margin-right:7px;"></i>Guardar límites
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ TOAST ════════════════════════════════════════════ -->
+  <div id="toast"></div>
+
+</div><!-- /#app -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════════════════ */
+const CATS = [
+  { id:'alimentacion', label:'Alimentación', e:'🛒', c:'#f97316', bg:'rgba(249,115,22,.12)' },
+  { id:'hogar',        label:'Hogar',        e:'🏠', c:'#3b82f6', bg:'rgba(59,130,246,.12)'  },
+  { id:'transporte',   label:'Transporte',   e:'🚗', c:'#eab308', bg:'rgba(234,179,8,.12)'   },
+  { id:'salud',        label:'Salud',        e:'💊', c:'#ec4899', bg:'rgba(236,72,153,.12)'  },
+  { id:'ocio',         label:'Ocio',         e:'🎮', c:'#8b5cf6', bg:'rgba(139,92,246,.12)'  },
+  { id:'suscripc',     label:'Suscripc.',    e:'📱', c:'#06b6d4', bg:'rgba(6,182,212,.12)'   },
+  { id:'ropa',         label:'Ropa',         e:'👕', c:'#10b981', bg:'rgba(16,185,129,.12)'  },
+  { id:'educacion',    label:'Educación',    e:'📚', c:'#6366f1', bg:'rgba(99,102,241,.12)'  },
+  { id:'nomina',       label:'Nómina',       e:'💼', c:'#10b981', bg:'rgba(16,185,129,.12)'  },
+  { id:'otros',        label:'Otros',        e:'💰', c:'#84cc16', bg:'rgba(132,204,22,.12)'  },
+];
+
+const EXP_IDS = ['alimentacion','hogar','transporte','salud','ocio','suscripc','ropa','educacion','otros'];
+const INC_IDS = ['nomina','otros'];
+
+const DEF_LIMITS = {
+  alimentacion:500, hogar:800, transporte:150,
+  salud:100, ocio:150, suscripc:50,
+  ropa:100, educacion:80, otros:100
+};
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+let transactions = [];
+let limits       = {};          // { "2026-07": { alimentacion:500, ... } }
+let txType       = 'expense';
+let selCat       = 'alimentacion';
+
+/* ═══════════════════════════════════════════════════════════
+   STORAGE  (swap keys with Firebase later)
+═══════════════════════════════════════════════════════════ */
+function load() {
+  try {
+    transactions = JSON.parse(localStorage.getItem('hf2_tx')  || '[]');
+    limits       = JSON.parse(localStorage.getItem('hf2_lim') || '{}');
+  } catch(e) {}
+}
+function save() {
+  localStorage.setItem('hf2_tx',  JSON.stringify(transactions));
+  localStorage.setItem('hf2_lim', JSON.stringify(limits));
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════ */
+function fmt(n) {
+  return new Intl.NumberFormat('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+}
+function nowKey() {
+  const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function fmtDate(s) {
+  const d = new Date(s+'T12:00:00');
+  return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+}
+function getCat(id) { return CATS.find(c=>c.id===id)||CATS[CATS.length-1]; }
+function getLimits() { return limits[nowKey()] || {...DEF_LIMITS}; }
+function monthTx()  { return transactions.filter(t=>t.date.startsWith(nowKey())); }
+function esc(s)     { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function toast(msg, ok=true) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = ok ? 'rgba(16,185,129,.4)' : 'rgba(244,63,94,.4)';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════════ */
+function updateHeader() {
+  const d  = new Date();
+  document.getElementById('hdr-month').textContent = `${MESES[d.getMonth()]} ${d.getFullYear()}`;
+
+  const txs = monthTx();
+  const inc = txs.filter(t=>t.type==='income' ).reduce((s,t)=>s+t.amount,0);
+  const exp = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const sav = inc - exp;
+
+  document.getElementById('bal-total').textContent = fmt(sav);
+  document.getElementById('bal-inc').textContent   = '€ '+fmt(inc);
+  document.getElementById('bal-exp').textContent   = '€ '+fmt(exp);
+  document.getElementById('bal-sav').textContent   = '€ '+fmt(Math.max(0,sav));
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TAB NAVIGATION
+═══════════════════════════════════════════════════════════ */
+function goTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('view-'+id).classList.add('active');
+  if (id==='budget') renderBudget();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VIEW: MOVIMIENTOS
+═══════════════════════════════════════════════════════════ */
+function renderHome() {
+  updateHeader();
+  const txs  = [...transactions].sort((a,b)=>new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00'));
+  const list = document.getElementById('tx-list');
+  document.getElementById('tx-count').textContent = txs.length + ' movimiento'+(txs.length!==1?'s':'');
+
+  if (!txs.length) {
+    list.innerHTML = `
+      <div class="empty">
+        <span class="ico">💸</span>
+        <h4>Sin movimientos todavía</h4>
+        <p>Pulsa el botón <strong style="color:#8b5cf6">+</strong> para registrar tu primer gasto o ingreso</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = txs.map(t => {
+    const cat = getCat(t.category);
+    const sign = t.type==='expense' ? '-' : '+';
+    const cls  = t.type==='expense' ? 'red' : 'green';
+    return `
+      <div class="tx-item">
+        <div class="tx-icon" style="background:${cat.bg}">${cat.e}</div>
+        <div class="tx-info">
+          <div class="tx-name">${esc(t.desc)}</div>
+          <div class="tx-meta">${fmtDate(t.date)} · ${cat.label}</div>
+        </div>
+        <div class="tx-amount ${cls}">${sign}€ ${fmt(t.amount)}</div>
+      </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VIEW: PRESUPUESTO
+═══════════════════════════════════════════════════════════ */
+function renderBudget() {
+  const lims = getLimits();
+  const txs  = monthTx();
+
+  const totalExp   = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const totalLimit = EXP_IDS.reduce((s,id)=>s+(lims[id]||0),0);
+  const left       = totalLimit - totalExp;
+
+  document.getElementById('b-spent').textContent = '€ '+fmt(totalExp);
+  document.getElementById('b-limit').textContent = '€ '+fmt(totalLimit);
+  document.getElementById('b-left').textContent  = '€ '+fmt(Math.abs(left));
+  document.getElementById('b-left').className    = 'bsum-val '+(left<0?'red':'green');
+
+  const expCats = CATS.filter(c=>EXP_IDS.includes(c.id));
+
+  document.getElementById('budget-list').innerHTML = expCats.map(cat=>{
+    const spent = txs.filter(t=>t.type==='expense'&&t.category===cat.id).reduce((s,t)=>s+t.amount,0);
+    const lim   = lims[cat.id]||0;
+    const pct   = lim>0 ? Math.min(100,Math.round(spent/lim*100)) : (spent>0?100:0);
+    const isOvr = lim>0 && spent>lim;
+    const isWrn = !isOvr && pct>80;
+    const barC  = isOvr?'#f43f5e': isWrn?'#f59e0b': cat.c;
+    const pctC  = barC;
+
+    return `
+      <div class="bcat ${isOvr?'over':''}">
+        <div class="bcat-top">
+          <div class="bcat-ico" style="background:${cat.bg}">${cat.e}</div>
+          <div class="bcat-info">
+            <div class="bcat-name">${cat.label}</div>
+            <div class="bcat-sub">€ ${fmt(spent)} de € ${fmt(lim)}</div>
+          </div>
+          <div class="bcat-pct" style="color:${pctC}">${isOvr?'⚠ ':''}${pct}%</div>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:${barC}"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL: ADD TRANSACTION
+═══════════════════════════════════════════════════════════ */
+function openAddSheet() {
+  document.getElementById('f-amount').value = '';
+  document.getElementById('f-desc').value   = '';
+  document.getElementById('f-date').value   = new Date().toISOString().slice(0,10);
+  setType('expense');
+  document.getElementById('add-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('f-amount').focus(), 360);
+}
+
+function setType(type) {
+  txType = type;
+  document.getElementById('tt-exp').className = 'tt-btn'+(type==='expense'?' sel-exp':'');
+  document.getElementById('tt-inc').className = 'tt-btn'+(type==='income' ?' sel-inc':'');
+  selCat = type==='expense' ? 'alimentacion' : 'nomina';
+  renderCatGrid();
+}
+
+function renderCatGrid() {
+  const ids  = txType==='expense' ? EXP_IDS : INC_IDS;
+  const cats = CATS.filter(c=>ids.includes(c.id));
+  document.getElementById('cat-grid').innerHTML = cats.map(cat=>`
+    <button class="cat-btn ${selCat===cat.id?'sel':''}" onclick="pickCat('${cat.id}')">
+      <span class="ce">${cat.e}</span>
+      <span class="cl">${cat.label}</span>
+    </button>`).join('');
+}
+
+function pickCat(id) { selCat=id; renderCatGrid(); }
+
+function saveTransaction() {
+  const amount = parseFloat(document.getElementById('f-amount').value);
+  const desc   = document.getElementById('f-desc').value.trim();
+  const date   = document.getElementById('f-date').value;
+
+  if (!amount||amount<=0) { toast('⚠ Introduce un importe válido',false); return; }
+  if (!desc)              { toast('⚠ Escribe una descripción',false);     return; }
+  if (!date)              { toast('⚠ Selecciona una fecha',false);        return; }
+
+  transactions.push({ id:Date.now(), type:txType, amount, desc, category:selCat, date });
+  save();
+  closeSheet('add-overlay');
+  renderHome();
+  const cat = getCat(selCat);
+  toast(`${cat.e} ${txType==='expense'?'Gasto':'Ingreso'} guardado`);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL: EDIT LIMITS
+═══════════════════════════════════════════════════════════ */
+function openLimitsSheet() {
+  const lims = getLimits();
+  const expCats = CATS.filter(c=>EXP_IDS.includes(c.id));
+
+  document.getElementById('limits-list').innerHTML = expCats.map(cat=>`
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);
+                padding:11px 14px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:19px;width:24px;text-align:center">${cat.e}</span>
+      <span style="font-size:13px;font-weight:500;flex:1;color:var(--text)">${cat.label}</span>
+      <input type="number" id="lim-${cat.id}" value="${lims[cat.id]||0}" min="0" step="10"
+        style="width:76px;background:var(--surface);border:1px solid var(--border2);
+               border-radius:8px;color:var(--text);font-size:13px;font-weight:700;
+               padding:6px 8px;text-align:right;outline:none;" />
+    </div>`).join('');
+
+  document.getElementById('limits-overlay').classList.add('open');
+}
+
+function saveLimits() {
+  const mk = nowKey();
+  const expCats = CATS.filter(c=>EXP_IDS.includes(c.id));
+  const obj = {};
+  expCats.forEach(cat => { obj[cat.id] = parseFloat(document.getElementById('lim-'+cat.id).value)||0; });
+  limits[mk] = obj;
+  save();
+  closeSheet('limits-overlay');
+  renderBudget();
+  toast('✅ Límites guardados');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   OVERLAY HELPERS
+═══════════════════════════════════════════════════════════ */
+function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+function closeOnBg(e, id) { if (e.target.id===id) closeSheet(id); }
+
+/* ═══════════════════════════════════════════════════════════
+   DEMO DATA (only if storage is empty)
+═══════════════════════════════════════════════════════════ */
+function seedDemo() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+
+  transactions = [
+    { id:1, type:'income',  amount:1800,  desc:'Nómina',            category:'nomina',        date:`${y}-${m}-05` },
+    { id:2, type:'income',  amount:600,   desc:'Nómina pareja',     category:'nomina',        date:`${y}-${m}-05` },
+    { id:3, type:'expense', amount:65.30, desc:'Mercadona',         category:'alimentacion',  date:`${y}-${m}-15` },
+    { id:4, type:'expense', amount:42.00, desc:'Recibo luz',        category:'hogar',         date:`${y}-${m}-14` },
+    { id:5, type:'expense', amount:35.00, desc:'Gasolina',          category:'transporte',    date:`${y}-${m}-13` },
+    { id:6, type:'expense', amount:15.99, desc:'Netflix + Spotify', category:'suscripc',      date:`${y}-${m}-01` },
+    { id:7, type:'expense', amount:89.50, desc:'Ropa niños',        category:'ropa',          date:`${y}-${m}-10` },
+    { id:8, type:'expense', amount:28.40, desc:'Farmacia',          category:'salud',         date:`${y}-${m}-08` },
+  ];
+  limits[`${y}-${m}`] = {...DEF_LIMITS};
+  save();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+(function init() {
+  load();
+  if (!transactions.length) seedDemo();
+  renderCatGrid();
+  renderHome();
+})();
+</script>
 </body>
 </html>
