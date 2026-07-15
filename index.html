@@ -1,7 +1,265 @@
-echo "# home-finance" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/gongory/home-finance.git
-git push -u origin main
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Economía Familiar</title>
+    
+    <!-- Tailwind CSS para un diseño rápido, moderno y responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome para los iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Configuración personalizada de Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Evitar el scroll elástico en móviles para que parezca una app nativa */
+        body {
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Ocultar barra de scroll pero mantener funcionalidad */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Animación suave para cambiar de pantallas */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .view-section {
+            display: none;
+        }
+        
+        .view-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 h-screen w-screen overflow-hidden flex justify-center">
+
+    <!-- Contenedor principal simulando la pantalla de un móvil -->
+    <div class="w-full max-w-md h-full bg-gray-50 flex flex-col relative shadow-2xl overflow-hidden">
+        
+        <!-- HEADER -->
+        <header class="bg-white px-6 pt-8 pb-4 rounded-b-3xl shadow-sm z-10">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">Hola, Familia 👋</h1>
+                    <p class="text-sm text-gray-500">Resumen financiero</p>
+                </div>
+                <div class="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center text-brand-600">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Saldo Principal -->
+            <div class="bg-gradient-to-r from-brand-500 to-brand-600 rounded-2xl p-6 text-white shadow-lg shadow-brand-500/30">
+                <p class="text-brand-100 text-sm mb-1 font-medium">Saldo Total Disponible</p>
+                <h2 class="text-4xl font-bold mb-4">€ 2,450.50</h2>
+                
+                <div class="flex justify-between items-center border-t border-white/20 pt-4 mt-2">
+                    <div>
+                        <p class="text-xs text-brand-100">Ingresos (Mes)</p>
+                        <p class="font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-trend-up text-xs"></i> € 3,200.00
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-brand-100">Gastos (Mes)</p>
+                        <p class="font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-trend-down text-xs"></i> € 749.50
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ÁREA DE CONTENIDO (Vistas) -->
+        <main class="flex-1 overflow-y-auto no-scrollbar pb-24 px-6 pt-6">
+            
+            <!-- VISTA 1: Inicio (Dashboard) -->
+            <section id="view-home" class="view-section active fade-in">
+                <div class="flex justify-between items-end mb-4">
+                    <h3 class="font-bold text-gray-800">Movimientos Recientes</h3>
+                    <button class="text-sm text-brand-600 font-medium">Ver todos</button>
+                </div>
+
+                <!-- Lista de transacciones -->
+                <div class="space-y-4" id="transactions-list">
+                    <!-- Transacción 1 -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 flex-shrink-0">
+                            <i class="fa-solid fa-cart-shopping"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-800 text-sm">Mercadona</h4>
+                            <p class="text-xs text-gray-500">Hoy, 10:30 AM • Alimentación</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-red-500">-€ 65.30</p>
+                        </div>
+                    </div>
+
+                    <!-- Transacción 2 -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 flex-shrink-0">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-800 text-sm">Recibo Luz Iberdrola</h4>
+                            <p class="text-xs text-gray-500">Ayer • Domiciliado</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-red-500">-€ 42.00</p>
+                        </div>
+                    </div>
+
+                    <!-- Transacción 3 -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-500 flex-shrink-0">
+                            <i class="fa-solid fa-briefcase"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-800 text-sm">Nómina</h4>
+                            <p class="text-xs text-gray-500">12 Jul • Ingreso</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-green-500">+€ 1,800.00</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VISTA 2: Tarjetas -->
+            <section id="view-cards" class="view-section fade-in">
+                <h3 class="font-bold text-gray-800 mb-4">Mis Tarjetas</h3>
+                <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-5 text-white mb-4 shadow-lg">
+                    <div class="flex justify-between items-center mb-6">
+                        <i class="fa-brands fa-cc-visa text-3xl"></i>
+                        <span class="text-xs bg-white/20 px-2 py-1 rounded">Crédito</span>
+                    </div>
+                    <p class="text-sm text-gray-300">Deuda actual</p>
+                    <h4 class="text-2xl font-bold mb-2">€ 320.00</h4>
+                    <div class="flex justify-between text-xs text-gray-400">
+                        <span>Límite: € 2,000</span>
+                        <span>Corte: Día 20</span>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500 text-center mt-6">Próximamente conectaremos esto con Firebase.</p>
+            </section>
+
+            <!-- VISTA 3: Calendario -->
+            <section id="view-calendar" class="view-section fade-in">
+                <h3 class="font-bold text-gray-800 mb-4">Próximos Pagos</h3>
+                <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-yellow-500 mb-3">
+                    <div class="flex justify-between">
+                        <div>
+                            <h4 class="font-bold text-sm">Internet / Móvil</h4>
+                            <p class="text-xs text-gray-500">Vence en 3 días (Día 18)</p>
+                        </div>
+                        <p class="font-bold text-gray-800">€ 45.00</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-gray-300 opacity-60">
+                    <div class="flex justify-between">
+                        <div>
+                            <h4 class="font-bold text-sm">Hipoteca / Alquiler</h4>
+                            <p class="text-xs text-gray-500">Pagado este mes (Día 5)</p>
+                        </div>
+                        <p class="font-bold text-gray-800">€ 650.00</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- BOTÓN FLOTANTE PARA AÑADIR GASTO -->
+        <button class="absolute bottom-20 right-6 w-14 h-14 bg-brand-500 hover:bg-brand-600 text-white rounded-full shadow-lg shadow-brand-500/40 flex items-center justify-center text-xl transition-transform active:scale-95 z-20">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+
+        <!-- BARRA DE NAVEGACIÓN INFERIOR -->
+        <nav class="absolute bottom-0 w-full bg-white border-t border-gray-100 flex justify-around items-center h-16 z-20 pb-safe">
+            <button onclick="switchView('home', this)" class="nav-btn text-brand-600 flex flex-col items-center justify-center w-full h-full">
+                <i class="fa-solid fa-house text-xl mb-1"></i>
+                <span class="text-[10px] font-medium">Inicio</span>
+            </button>
+            <button onclick="switchView('cards', this)" class="nav-btn text-gray-400 hover:text-gray-600 transition-colors flex flex-col items-center justify-center w-full h-full">
+                <i class="fa-solid fa-credit-card text-xl mb-1"></i>
+                <span class="text-[10px] font-medium">Tarjetas</span>
+            </button>
+            <button onclick="switchView('calendar', this)" class="nav-btn text-gray-400 hover:text-gray-600 transition-colors flex flex-col items-center justify-center w-full h-full">
+                <i class="fa-solid fa-calendar-days text-xl mb-1"></i>
+                <span class="text-[10px] font-medium">Calendario</span>
+            </button>
+            <button class="nav-btn text-gray-400 hover:text-gray-600 transition-colors flex flex-col items-center justify-center w-full h-full">
+                <i class="fa-solid fa-gear text-xl mb-1"></i>
+                <span class="text-[10px] font-medium">Ajustes</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <!-- LOGICA DE LA APP (JavaScript) -->
+    <script>
+        /**
+         * Función para cambiar entre las diferentes pantallas de la app.
+         * @param {string} viewId - El identificador de la vista (home, cards, calendar)
+         * @param {HTMLElement} btnElement - El botón que fue pulsado
+         */
+        function switchView(viewId, btnElement) {
+            // 1. Ocultar todas las secciones
+            const sections = document.querySelectorAll('.view-section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // 2. Mostrar la sección seleccionada
+            const activeSection = document.getElementById(`view-${viewId}`);
+            if (activeSection) {
+                activeSection.classList.add('active');
+            }
+
+            // 3. Actualizar el estilo de los botones de navegación
+            const allBtns = document.querySelectorAll('.nav-btn');
+            allBtns.forEach(btn => {
+                btn.classList.remove('text-brand-600');
+                btn.classList.add('text-gray-400');
+            });
+
+            // 4. Resaltar el botón activo
+            btnElement.classList.remove('text-gray-400');
+            btnElement.classList.add('text-brand-600');
+        }
+    </script>
+</body>
+</html>
