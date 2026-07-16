@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Home Finance</title>
-  <meta name="description" content="App de economía familiar: controla ingresos, gastos y presupuesto mensual" />
+  <meta name="description" content="App de economía familiar: controla ingresos, gastos, presupuesto y calendario de pagos" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
-    /* ─── TOKENS ─────────────────────────────────────── */
+    /* ─── TOKENS — DARK (default) ────────────────────── */
     :root {
       --bg:        #0d1117;
       --surface:   #161b22;
@@ -24,6 +24,8 @@
       --green-bg:  rgba(16,185,129,.12);
       --red:       #f43f5e;
       --red-bg:    rgba(244,63,94,.12);
+      --amber:     #f59e0b;
+      --amber-bg:  rgba(245,158,11,.10);
       --text:      #e6edf3;
       --muted:     #8b949e;
       --faint:     #484f58;
@@ -31,6 +33,28 @@
       --rL:        18px;
       --rF:        9999px;
       --ease:      cubic-bezier(.4,0,.2,1);
+      --body-bg:   #080b0f;
+    }
+
+    /* ─── TOKENS — LIGHT ─────────────────────────────── */
+    body.light {
+      --bg:        #f5f5f7;
+      --surface:   #ffffff;
+      --border:    #e2e2e7;
+      --border2:   #d1d1d6;
+      --accent:    #7c3aed;
+      --accent2:   #8b5cf6;
+      --glow:      rgba(124,58,237,.18);
+      --green:     #059669;
+      --green-bg:  rgba(5,150,105,.1);
+      --red:       #e11d48;
+      --red-bg:    rgba(225,29,72,.08);
+      --amber:     #d97706;
+      --amber-bg:  rgba(217,119,6,.08);
+      --text:      #1c1c1e;
+      --muted:     #6b6b72;
+      --faint:     #aeaeb2;
+      --body-bg:   #e8e8ed;
     }
 
     /* ─── RESET ──────────────────────────────────────── */
@@ -38,12 +62,13 @@
     html, body { height: 100%; overflow: hidden; }
     body {
       font-family: 'Inter', system-ui, sans-serif;
-      background: #080b0f;
+      background: var(--body-bg);
       color: var(--text);
       display: flex;
       justify-content: center;
       align-items: center;
       -webkit-tap-highlight-color: transparent;
+      transition: background .35s var(--ease), color .35s var(--ease);
     }
     button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
     input  { font-family: inherit; }
@@ -152,14 +177,14 @@
     .tab {
       flex: 1;
       padding: 12px 0;
-      font-size: 12px; font-weight: 600;
+      font-size: 11px; font-weight: 600;
       color: var(--faint);
       display: flex; flex-direction: column;
       align-items: center; gap: 4px;
       transition: color .2s var(--ease);
       position: relative;
     }
-    .tab i { font-size: 16px; }
+    .tab i { font-size: 15px; }
     .tab.active { color: var(--accent2); }
     .tab.active::after {
       content: '';
@@ -188,7 +213,6 @@
       display: block;
       animation: fadeUp .25s var(--ease) both;
     }
-    /* Bottom padding so last card isn't hidden behind FAB */
     .view { padding-bottom: 88px; }
 
     @keyframes fadeUp {
@@ -286,6 +310,189 @@
     .bar-track  { height: 6px; background: var(--border); border-radius: var(--rF); overflow: hidden; }
     .bar-fill   { height: 100%; border-radius: var(--rF); transition: width .7s var(--ease); }
 
+    /* ─── OVERDUE ALERTS ──────────────────────────────── */
+    .alerts-banner { margin-bottom: 14px; }
+    .alert-card {
+      background: var(--amber-bg);
+      border: 1px solid rgba(245,158,11,.32);
+      border-radius: var(--r);
+      padding: 11px 13px;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 7px;
+      cursor: pointer;
+      transition: background .15s var(--ease);
+    }
+    .alert-card:active { background: rgba(245,158,11,.18); }
+    .alert-ico {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: rgba(245,158,11,.18);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .alert-info { flex: 1; min-width: 0; }
+    .alert-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .alert-sub { font-size: 11px; color: var(--amber); margin-top: 2px; }
+    .alert-amount { font-size: 13px; font-weight: 700; color: var(--amber); flex-shrink: 0; }
+    .alerts-header {
+      font-size: 11px; font-weight: 700; color: var(--amber);
+      text-transform: uppercase; letter-spacing: .7px;
+      margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    /* ─── CALENDAR VIEW ──────────────────────────────── */
+    .cal-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .cal-nav-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s var(--ease), border-color .15s var(--ease);
+    }
+    .cal-nav-btn:active { background: var(--border2); }
+    .cal-month-label {
+      font-size: 17px; font-weight: 800; letter-spacing: -.4px;
+      text-align: center;
+    }
+
+    .cal-weekdays {
+      display: grid; grid-template-columns: repeat(7,1fr);
+      gap: 2px; margin-bottom: 5px;
+    }
+    .cal-wd {
+      text-align: center; font-size: 10px; font-weight: 700;
+      color: var(--muted); padding: 4px 0;
+      text-transform: uppercase; letter-spacing: .4px;
+    }
+    .cal-wd.weekend { color: var(--accent2); }
+
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7,1fr);
+      gap: 3px;
+    }
+    .cal-cell {
+      border-radius: 10px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid transparent;
+      transition: background .15s var(--ease), border-color .15s var(--ease);
+      padding: 6px 2px;
+      min-height: 42px;
+    }
+    .cal-cell:active { background: var(--surface); }
+    .cal-cell.other-month { opacity: .2; pointer-events: none; }
+    .cal-cell.today {
+      background: rgba(124,58,237,.14);
+      border-color: rgba(139,92,246,.4);
+    }
+    .cal-cell.today .cal-day-num { color: var(--accent2); font-weight: 800; }
+    .cal-cell.selected {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .cal-cell.selected .cal-day-num { color: #fff; font-weight: 800; }
+    .cal-cell.weekend-day .cal-day-num { color: var(--accent2); }
+    .cal-cell.selected.weekend-day .cal-day-num { color: #fff; }
+
+    .cal-day-num {
+      font-size: 13px; font-weight: 600; line-height: 1;
+    }
+    .cal-dots {
+      display: flex; gap: 2px; justify-content: center; flex-wrap: wrap;
+    }
+    .cal-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+    }
+    .cal-dot.expense { background: var(--red); }
+    .cal-dot.income  { background: var(--green); }
+    .cal-dot.sched   { background: var(--amber); }
+
+    .cal-month-summary {
+      margin-top: 16px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .cal-sched-pending {
+      margin-top: 8px;
+      background: var(--amber-bg);
+      border: 1px solid rgba(245,158,11,.3);
+      border-radius: var(--r);
+      padding: 10px 13px;
+      font-size: 12px; font-weight: 600;
+      color: var(--amber);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ─── DAY PANEL (bottom sheet) ────────────────────── */
+    .day-panel-title {
+      font-size: 16px; font-weight: 800; text-align: center;
+      margin-bottom: 18px; letter-spacing: -.3px;
+    }
+    .day-section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 9px; margin-top: 16px;
+    }
+    .day-section-title {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .7px;
+    }
+    .btn-add-sched {
+      font-size: 11px; font-weight: 700;
+      color: var(--accent2);
+      background: rgba(139,92,246,.12);
+      border: 1px solid rgba(139,92,246,.22);
+      padding: 5px 11px; border-radius: var(--rF);
+      display: flex; align-items: center; gap: 5px;
+      transition: background .15s var(--ease);
+    }
+    .btn-add-sched:active { background: rgba(139,92,246,.22); }
+    .day-empty {
+      font-size: 12px; color: var(--faint);
+      padding: 6px 0 4px; font-style: italic;
+    }
+
+    /* ─── SCHEDULED PAYMENT ITEM ─────────────────────── */
+    .sched-item {
+      background: var(--bg);
+      border: 1px solid rgba(245,158,11,.3);
+      border-radius: var(--r);
+      padding: 11px 12px;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 7px;
+      transition: opacity .2s;
+    }
+    .sched-item.paid {
+      opacity: .45; border-color: var(--border);
+    }
+    .sched-ico {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: rgba(245,158,11,.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .sched-item.paid .sched-ico { background: var(--surface); }
+    .sched-info { flex: 1; min-width: 0; }
+    .sched-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sched-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .sched-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+    .sched-amount { font-size: 13px; font-weight: 700; color: var(--amber); }
+    .sched-item.paid .sched-amount { color: var(--green); }
+    .sched-actions { display: flex; gap: 5px; }
+    .sched-btn {
+      padding: 4px 9px; border-radius: 6px;
+      font-size: 10px; font-weight: 700;
+      border: 1px solid transparent;
+      transition: opacity .15s;
+    }
+    .sched-btn:active { opacity: .7; }
+    .sched-btn.pay { background: var(--green-bg); color: var(--green); border-color: rgba(16,185,129,.3); }
+    .sched-btn.del { background: var(--red-bg); color: var(--red); border-color: rgba(244,63,94,.25); }
+
     /* ─── FAB ────────────────────────────────────────── */
     #fab {
       position: absolute;
@@ -320,10 +527,10 @@
       background: var(--surface);
       border-top: 1px solid var(--border);
       border-radius: 22px 22px 0 0;
-      padding: 12px 20px 32px;
+      padding: 12px 20px 36px;
       transform: translateY(100%);
       transition: transform .3s var(--ease);
-      max-height: 88vh;
+      max-height: 90vh;
       overflow-y: auto;
     }
     .sheet::-webkit-scrollbar { display: none; }
@@ -336,6 +543,10 @@
       margin: 0 auto 18px;
     }
     .sheet-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 18px; }
+    .sheet-subtitle {
+      font-size: 12px; color: var(--muted);
+      text-align: center; margin-top: -12px; margin-bottom: 18px;
+    }
 
     /* Type toggle */
     .type-toggle {
@@ -406,7 +617,6 @@
     }
     .btn-save:active { transform: scale(.98); opacity: .88; }
 
-    /* Delete button inside edit sheet */
     .btn-delete {
       width: 100%; padding: 13px;
       border-radius: var(--r);
@@ -418,24 +628,6 @@
       margin-top: 8px;
     }
     .btn-delete:active { transform: scale(.98); opacity: .8; }
-
-    /* Action sheet (edit / delete options) */
-    .action-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px 16px;
-      border-radius: var(--r);
-      background: var(--bg);
-      border: 1px solid var(--border);
-      font-size: 14px; font-weight: 600;
-      cursor: pointer;
-      transition: background .15s var(--ease);
-    }
-    .action-item:active { background: #1c2128; }
-    .action-item .ai-icon {
-      width: 36px; height: 36px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px; flex-shrink: 0;
-    }
 
     /* Editable home title */
     .header-title-btn {
@@ -451,7 +643,6 @@
     }
     .header-title-btn:hover .edit-ico { opacity: 1; }
 
-    /* Edit tx icon on each row */
     .tx-edit-btn {
       width: 30px; height: 30px;
       border-radius: 8px;
@@ -462,6 +653,170 @@
       transition: background .15s var(--ease), color .15s var(--ease);
     }
     .tx-item:hover .tx-edit-btn { background: var(--border); color: var(--muted); }
+
+    /* ─── THEME TOGGLE ───────────────────────────────── */
+    .hdr-actions {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .hdr-icon-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s var(--ease), border-color .2s var(--ease), transform .15s var(--ease);
+      flex-shrink: 0;
+    }
+    .hdr-icon-btn:active { transform: scale(.9); }
+    .hdr-icon-btn:hover  { background: var(--border); }
+
+    /* ─── MANUAL / HELP ─────────────────────────────── */
+    .help-section {
+      margin-bottom: 22px;
+    }
+    .help-section-title {
+      font-size: 13px; font-weight: 800; letter-spacing: -.2px;
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .help-section-title .hi {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .help-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 11px 13px;
+      margin-bottom: 7px;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .help-item-ico {
+      font-size: 18px; flex-shrink: 0; margin-top: 1px;
+    }
+    .help-item-text { flex: 1; }
+    .help-item-title {
+      font-size: 13px; font-weight: 700; margin-bottom: 3px;
+    }
+    .help-item-desc {
+      font-size: 12px; color: var(--muted); line-height: 1.5;
+    }
+    .help-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(139,92,246,.12); color: var(--accent2);
+      border: 1px solid rgba(139,92,246,.22);
+      border-radius: var(--rF); padding: 2px 8px;
+      font-size: 10px; font-weight: 700;
+    }
+    .help-divider {
+      height: 1px; background: var(--border); margin: 18px 0;
+    }
+
+    /* ─── INFO / ABOUT ───────────────────────────────── */
+    .app-version-card {
+      background: linear-gradient(135deg,#1e0a40,#2d1060 60%,#160b52);
+      border: 1px solid rgba(139,92,246,.3);
+      border-radius: var(--rL);
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .app-version-card::before {
+      content:'';
+      position: absolute; top:-40px; right:-40px;
+      width:120px; height:120px;
+      background: radial-gradient(circle,rgba(139,92,246,.25),transparent 70%);
+      border-radius: 50%; pointer-events: none;
+    }
+    .app-version-card::after {
+      content:'';
+      position: absolute; bottom:-30px; left:-30px;
+      width:90px; height:90px;
+      background: radial-gradient(circle,rgba(6,182,212,.15),transparent 70%);
+      border-radius: 50%; pointer-events: none;
+    }
+    .app-ver-logo {
+      font-size: 40px; display: block; margin-bottom: 8px;
+      position: relative; z-index: 1;
+    }
+    .app-ver-name {
+      font-size: 18px; font-weight: 800; color: #fff;
+      letter-spacing: -.4px; position: relative; z-index: 1;
+    }
+    .app-ver-badge {
+      display: inline-block;
+      background: rgba(139,92,246,.3);
+      border: 1px solid rgba(139,92,246,.5);
+      border-radius: var(--rF);
+      padding: 3px 12px;
+      font-size: 11px; font-weight: 700;
+      color: var(--accent2);
+      margin-top: 8px;
+      position: relative; z-index: 1;
+    }
+    .app-ver-date {
+      font-size: 11px; color: rgba(255,255,255,.4);
+      margin-top: 6px; position: relative; z-index: 1;
+    }
+
+    .changelog-title {
+      font-size: 12px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: .7px; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .cl-entry {
+      border-left: 2px solid var(--border2);
+      padding-left: 14px;
+      margin-bottom: 18px;
+      position: relative;
+    }
+    .cl-entry::before {
+      content: '';
+      position: absolute; left: -5px; top: 4px;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent2);
+    }
+    .cl-version {
+      font-size: 13px; font-weight: 800;
+      color: var(--accent2); letter-spacing: -.2px;
+      margin-bottom: 2px;
+    }
+    .cl-date {
+      font-size: 10px; color: var(--muted);
+      font-weight: 600; margin-bottom: 8px;
+    }
+    .cl-change {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 7px 9px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      margin-bottom: 5px;
+    }
+    .cl-change-ico { font-size: 14px; flex-shrink: 0; }
+    .cl-change-text {
+      font-size: 12px; font-weight: 500;
+      line-height: 1.45; color: var(--text);
+    }
+    .cl-tag {
+      display: inline-block;
+      font-size: 9px; font-weight: 700;
+      border-radius: 4px; padding: 1px 6px;
+      margin-right: 4px; vertical-align: middle;
+    }
+    .cl-tag.new  { background: rgba(16,185,129,.15); color: var(--green); }
+    .cl-tag.fix  { background: rgba(244,63,94,.12);  color: var(--red); }
+    .cl-tag.upd  { background: rgba(139,92,246,.15); color: var(--accent2); }
+    .info-footer {
+      text-align: center;
+      font-size: 11px; color: var(--faint);
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      line-height: 1.6;
+    }
 
     /* ─── TOAST ──────────────────────────────────────── */
     #toast {
@@ -497,6 +852,17 @@
           <i class="fa-solid fa-pen edit-ico"></i>
         </button>
       </div>
+      <div class="hdr-actions">
+        <button class="hdr-icon-btn" id="theme-btn" onclick="toggleTheme()" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">
+          <i class="fa-solid fa-moon" id="theme-icon"></i>
+        </button>
+        <button class="hdr-icon-btn" onclick="openHelp()" title="Manual de uso" aria-label="Ayuda">
+          <i class="fa-solid fa-circle-question"></i>
+        </button>
+        <button class="hdr-icon-btn" onclick="openInfo()" title="Información de la app" aria-label="Información">
+          <i class="fa-solid fa-circle-info"></i>
+        </button>
+      </div>
     </div>
 
     <!-- Balance card -->
@@ -522,8 +888,9 @@
 
   <!-- ══ TAB BAR ═════════════════════════════════════════ -->
   <div class="tabs">
-    <button class="tab active" id="tab-home"   onclick="goTab('home',   this)"><i class="fa-solid fa-list"></i>Movimientos</button>
-    <button class="tab"        id="tab-budget" onclick="goTab('budget', this)"><i class="fa-solid fa-chart-pie"></i>Presupuesto</button>
+    <button class="tab active" id="tab-home"     onclick="goTab('home',     this)"><i class="fa-solid fa-list"></i>Movimientos</button>
+    <button class="tab"        id="tab-budget"   onclick="goTab('budget',   this)"><i class="fa-solid fa-chart-pie"></i>Presupuesto</button>
+    <button class="tab"        id="tab-calendar" onclick="goTab('calendar', this)"><i class="fa-solid fa-calendar-days"></i>Calendario</button>
   </div>
 
   <!-- ══ MAIN ════════════════════════════════════════════ -->
@@ -531,6 +898,8 @@
 
     <!-- VIEW: MOVIMIENTOS -->
     <div class="view active" id="view-home">
+      <!-- Overdue alerts banner -->
+      <div class="alerts-banner" id="alerts-banner" style="display:none;"></div>
       <div class="sec-header">
         <span class="sec-title">Este mes</span>
         <span id="tx-count" style="font-size:11px;color:var(--muted);">0 movimientos</span>
@@ -565,6 +934,50 @@
       <div class="budget-list" id="budget-list"></div>
     </div>
 
+    <!-- VIEW: CALENDARIO -->
+    <div class="view" id="view-calendar">
+      <!-- Navigation -->
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calPrev()" aria-label="Mes anterior">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="cal-month-label" id="cal-label">Julio 2026</span>
+        <button class="cal-nav-btn" onclick="calNext()" aria-label="Mes siguiente">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <!-- Weekday headers -->
+      <div class="cal-weekdays">
+        <span class="cal-wd">Lun</span>
+        <span class="cal-wd">Mar</span>
+        <span class="cal-wd">Mié</span>
+        <span class="cal-wd">Jue</span>
+        <span class="cal-wd">Vie</span>
+        <span class="cal-wd weekend">Sáb</span>
+        <span class="cal-wd weekend">Dom</span>
+      </div>
+
+      <!-- Day grid -->
+      <div class="cal-grid" id="cal-grid"></div>
+
+      <!-- Month summary -->
+      <div id="cal-month-summary"></div>
+
+      <!-- Legend -->
+      <div style="margin-top:14px;display:flex;gap:14px;flex-wrap:wrap;">
+        <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span>Ingreso
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;"></span>Gasto
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block;"></span>Pago programado
+        </span>
+      </div>
+    </div>
+
   </main>
 
   <!-- FAB -->
@@ -578,7 +991,6 @@
       <div class="handle"></div>
       <div class="sheet-title">Nueva transacción</div>
 
-      <!-- Gasto / Ingreso -->
       <div class="type-toggle">
         <button class="tt-btn sel-exp" id="tt-exp" onclick="setType('expense')">
           <i class="fa-solid fa-arrow-trend-down" style="margin-right:5px;"></i>Gasto
@@ -588,25 +1000,21 @@
         </button>
       </div>
 
-      <!-- Importe -->
       <div class="field">
         <label class="label" for="f-amount">Importe (€)</label>
         <input class="inp big" type="number" inputmode="decimal" id="f-amount" placeholder="0,00" min="0" step="0.01" />
       </div>
 
-      <!-- Descripción -->
       <div class="field">
         <label class="label" for="f-desc">Descripción</label>
         <input class="inp" type="text" id="f-desc" placeholder="Ej: Mercadona" maxlength="60" />
       </div>
 
-      <!-- Categoría -->
       <div class="field">
         <label class="label">Categoría</label>
         <div class="cat-grid" id="cat-grid"></div>
       </div>
 
-      <!-- Fecha -->
       <div class="field">
         <label class="label" for="f-date">Fecha</label>
         <input class="inp" type="date" id="f-date" />
@@ -689,6 +1097,283 @@
     </div>
   </div>
 
+  <!-- ══ MODAL: DETALLE DEL DÍA ══════════════════════════════ -->
+  <div class="overlay" id="day-overlay" onclick="closeOnBg(event,'day-overlay')">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="day-panel-title" id="day-panel-title">Lunes 1 de julio</div>
+
+      <div class="day-section-header" style="margin-top:0;">
+        <span class="day-section-title"><i class="fa-solid fa-receipt" style="margin-right:5px;opacity:.6;"></i>Movimientos</span>
+      </div>
+      <div id="day-tx-list"></div>
+
+      <div class="day-section-header">
+        <span class="day-section-title"><i class="fa-solid fa-clock" style="margin-right:5px;opacity:.6;"></i>Pagos programados</span>
+        <button class="btn-add-sched" onclick="openAddSchedFromPanel()">
+          <i class="fa-solid fa-plus"></i> Programar
+        </button>
+      </div>
+      <div id="day-sched-list"></div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: PROGRAMAR PAGO ══════════════════════════════ -->
+  <div class="overlay" id="sched-overlay" onclick="closeOnBg(event,'sched-overlay')">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-title">⏰ Programar pago</div>
+      <div class="sheet-subtitle" id="sched-date-label">Para el 1 de julio</div>
+
+      <div class="field">
+        <label class="label" for="sf-amount">Importe (€)</label>
+        <input class="inp big" type="number" inputmode="decimal" id="sf-amount" placeholder="0,00" min="0" step="0.01" />
+      </div>
+
+      <div class="field">
+        <label class="label" for="sf-desc">Descripción</label>
+        <input class="inp" type="text" id="sf-desc" placeholder="Ej: Recibo del gas" maxlength="60" />
+      </div>
+
+      <div class="field">
+        <label class="label">Categoría</label>
+        <div class="cat-grid" id="sched-cat-grid"></div>
+      </div>
+
+      <button class="btn-save" onclick="saveScheduled()" style="background:linear-gradient(135deg,#b45309,#f59e0b);box-shadow:0 4px 16px rgba(245,158,11,.35);">
+        <i class="fa-solid fa-clock" style="margin-right:7px;"></i>Programar pago
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: MANUAL DE USO ══════════════════════════════ -->
+  <div class="overlay" id="help-overlay" onclick="closeOnBg(event,'help-overlay')">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-title">📖 Manual de uso</div>
+
+      <!-- MOVIMIENTOS -->
+      <div class="help-section">
+        <div class="help-section-title">
+          <span class="hi" style="background:rgba(139,92,246,.15)">📋</span>
+          Movimientos
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">➕</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Añadir gasto o ingreso</div>
+            <div class="help-item-desc">Pulsa el botón <span class="help-badge">+ morado</span> de la esquina inferior derecha. Elige si es un gasto o ingreso, introduce el importe, descripción, categoría y fecha.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">✏️</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Editar o eliminar un movimiento</div>
+            <div class="help-item-desc">Toca cualquier movimiento de la lista para abrirlo. Puedes modificar todos sus datos o eliminarlo con el botón rojo.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">🏠</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Nombre del hogar</div>
+            <div class="help-item-desc">Toca el título <em>Home Finance 🏠</em> en la cabecera para personalizar el nombre de tu hogar.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-divider"></div>
+
+      <!-- PRESUPUESTO -->
+      <div class="help-section">
+        <div class="help-section-title">
+          <span class="hi" style="background:rgba(16,185,129,.15)">📊</span>
+          Presupuesto
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">🎯</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Límites por categoría</div>
+            <div class="help-item-desc">En la pestaña <span class="help-badge">Presupuesto</span> toca <em>Editar límites</em> para fijar cuánto puedes gastar al mes en cada categoría (alimentación, hogar, ocio…).</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">⚠️</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Alertas de presupuesto</div>
+            <div class="help-item-desc">La barra de progreso se vuelve <span style="color:#f59e0b;font-weight:700;">amarilla</span> cuando superas el 80% del límite y <span style="color:#f43f5e;font-weight:700;">roja</span> si te pasas del límite.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-divider"></div>
+
+      <!-- CALENDARIO -->
+      <div class="help-section">
+        <div class="help-section-title">
+          <span class="hi" style="background:rgba(6,182,212,.15)">📅</span>
+          Calendario
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">🔴🟢🟡</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Puntos de color en los días</div>
+            <div class="help-item-desc">
+              <span style="color:#10b981;font-weight:700;">● Verde</span> = ingreso &nbsp;
+              <span style="color:#f43f5e;font-weight:700;">● Rojo</span> = gasto &nbsp;
+              <span style="color:#f59e0b;font-weight:700;">● Amarillo</span> = pago programado
+            </div>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">👆</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Ver detalle de un día</div>
+            <div class="help-item-desc">Toca cualquier día del calendario para ver todos sus movimientos y pagos programados en un panel emergente.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">⏰</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Programar un pago futuro</div>
+            <div class="help-item-desc">Toca un día y pulsa <span class="help-badge">+ Programar</span>. Rellena importe, descripción y categoría. El pago aparecerá en amarillo en el calendario.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">✅</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Marcar un pago como pagado</div>
+            <div class="help-item-desc">Desde el panel del día, toca <span class="help-badge">✅ Pagar</span>. El pago se registra automáticamente como gasto real en la app.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">🗓️</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Navegar por meses y años</div>
+            <div class="help-item-desc">Usa las flechas <strong>‹ ›</strong> del calendario para moverte entre meses. Puedes ir a cualquier mes histórico y ver qué se gastó ese día.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-divider"></div>
+
+      <!-- ALERTAS -->
+      <div class="help-section">
+        <div class="help-section-title">
+          <span class="hi" style="background:rgba(245,158,11,.15)">🔔</span>
+          Alertas y ajustes
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">🔔</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Pagos pendientes sin pagar</div>
+            <div class="help-item-desc">Si tienes pagos programados cuya fecha ya pasó y no fueron pagados, aparecerán como alertas en la pantalla de <em>Movimientos</em>. Tócalas para ir directamente al día en el calendario.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">🌙☀️</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Cambiar tema oscuro / claro</div>
+            <div class="help-item-desc">Usa el botón <span class="help-badge">🌙 / ☀️</span> en la esquina superior derecha de la cabecera para alternar entre el tema oscuro y el tema claro. Tu preferencia se guarda automáticamente.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">💾</span>
+          <div class="help-item-text">
+            <div class="help-item-title">¿Dónde se guardan los datos?</div>
+            <div class="help-item-desc">Todos los datos se guardan localmente en tu dispositivo (localStorage del navegador). No se envía nada a internet. Si borras los datos del navegador se perderán.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ MODAL: INFORMACIÓN / ACERCA DE ════════════════════ -->
+  <div class="overlay" id="info-overlay" onclick="closeOnBg(event,'info-overlay')">
+    <div class="sheet">
+      <div class="handle"></div>
+
+      <!-- Version card -->
+      <div class="app-version-card">
+        <span class="app-ver-logo">🏠</span>
+        <div class="app-ver-name">Home Finance</div>
+        <div class="app-ver-badge">v1.01</div>
+        <div class="app-ver-date">Julio 2026 · Desarrollado para uso familiar</div>
+      </div>
+
+      <!-- Changelog -->
+      <div class="changelog-title">
+        <i class="fa-solid fa-clock-rotate-left"></i> Historial de cambios
+      </div>
+
+      <!-- v1.01 -->
+      <div class="cl-entry">
+        <div class="cl-version">Versión 1.01</div>
+        <div class="cl-date">Julio 2026 — Actualización</div>
+        <div class="cl-change">
+          <span class="cl-change-ico">📅</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Vista de <strong>Calendario</strong> interactivo con navegación por meses y años históricos</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">🔴🟢🟡</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Puntos indicadores en el calendario: ingresos, gastos y pagos programados</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">⏰</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Sistema de <strong>pagos programados</strong>: calendariza pagos futuros y márcalos como pagados</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">🔔</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Alertas de pagos vencidos</strong> en la pantalla de Movimientos con acceso directo al día</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">🌙☀️</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Modo <strong>oscuro / claro</strong> con transición suave y preferencia guardada</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">📖</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Manual de instrucciones</strong> integrado con guía completa de todas las funciones</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">ℹ️</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Pantalla de <strong>Información</strong> con versión y changelog de la app</span>
+        </div>
+      </div>
+
+      <!-- v1.00 -->
+      <div class="cl-entry">
+        <div class="cl-version">Versión 1.00</div>
+        <div class="cl-date">Julio 2026 — Lanzamiento inicial</div>
+        <div class="cl-change">
+          <span class="cl-change-ico">💸</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Registro de <strong>gastos e ingresos</strong> con categorías, importe, descripción y fecha</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">📊</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Vista de <strong>Presupuesto</strong> con límites por categoría y barras de progreso</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">💰</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Balance mensual con ingresos, gastos y ahorro en tiempo real</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">✏️</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Edición y eliminación de movimientos existentes</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">💾</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Almacenamiento local en el dispositivo (sin necesidad de cuenta)</span>
+        </div>
+      </div>
+
+      <div class="info-footer">
+        🏠 Home Finance · v1.01<br>
+        Datos guardados en tu dispositivo · Sin conexión requerida
+      </div>
+
+    </div>
+  </div>
+
   <!-- ══ TOAST ════════════════════════════════════════════ -->
   <div id="toast"></div>
 
@@ -721,33 +1406,82 @@ const DEF_LIMITS = {
 };
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
 /* ═══════════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════════ */
-let transactions = [];
-let limits       = {};          // { "2026-07": { alimentacion:500, ... } }
-let homeName     = 'Home Finance 🏠';
-let txType       = 'expense';
-let selCat       = 'alimentacion';
-let editTxType   = 'expense';
-let editSelCat   = 'alimentacion';
-let editingTxId  = null;
+let transactions      = [];
+let limits            = {};          // { "2026-07": { alimentacion:500, ... } }
+let scheduledPayments = [];          // { id, desc, amount, category, date, paid }
+let homeName          = 'Home Finance 🏠';
+let isDarkMode        = true;
+let txType            = 'expense';
+let selCat            = 'alimentacion';
+let editTxType        = 'expense';
+let editSelCat        = 'alimentacion';
+let editingTxId       = null;
+
+// Calendar state
+let calYear   = new Date().getFullYear();
+let calMonth  = new Date().getMonth();   // 0-indexed
+let calSelDay = null;
+let panelDate = null;
+let schedSelCat = 'hogar';
 
 /* ═══════════════════════════════════════════════════════════
-   STORAGE  (swap keys with Firebase later)
+   STORAGE
 ═══════════════════════════════════════════════════════════ */
 function load() {
   try {
-    transactions = JSON.parse(localStorage.getItem('hf2_tx')   || '[]');
-    limits       = JSON.parse(localStorage.getItem('hf2_lim')  || '{}');
-    homeName     = localStorage.getItem('hf2_name') || 'Home Finance 🏠';
+    transactions      = JSON.parse(localStorage.getItem('hf2_tx')    || '[]');
+    limits            = JSON.parse(localStorage.getItem('hf2_lim')   || '{}');
+    scheduledPayments = JSON.parse(localStorage.getItem('hf2_sched') || '[]');
+    homeName          = localStorage.getItem('hf2_name') || 'Home Finance 🏠';
+    const savedTheme  = localStorage.getItem('hf2_theme');
+    isDarkMode        = savedTheme === null ? true : savedTheme === 'dark';
   } catch(e) {}
 }
 function save() {
-  localStorage.setItem('hf2_tx',   JSON.stringify(transactions));
-  localStorage.setItem('hf2_lim',  JSON.stringify(limits));
-  localStorage.setItem('hf2_name', homeName);
+  localStorage.setItem('hf2_tx',    JSON.stringify(transactions));
+  localStorage.setItem('hf2_lim',   JSON.stringify(limits));
+  localStorage.setItem('hf2_sched', JSON.stringify(scheduledPayments));
+  localStorage.setItem('hf2_name',  homeName);
+  localStorage.setItem('hf2_theme', isDarkMode ? 'dark' : 'light');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   THEME
+═══════════════════════════════════════════════════════════ */
+function applyTheme() {
+  if (isDarkMode) {
+    document.body.classList.remove('light');
+    document.getElementById('theme-icon').className = 'fa-solid fa-moon';
+  } else {
+    document.body.classList.add('light');
+    document.getElementById('theme-icon').className = 'fa-solid fa-sun';
+  }
+}
+
+function toggleTheme() {
+  isDarkMode = !isDarkMode;
+  applyTheme();
+  save();
+  toast(isDarkMode ? '🌙 Tema oscuro activado' : '☀️ Tema claro activado');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MANUAL / HELP
+═══════════════════════════════════════════════════════════ */
+function openHelp() {
+  document.getElementById('help-overlay').classList.add('open');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INFO / ABOUT
+═══════════════════════════════════════════════════════════ */
+function openInfo() {
+  document.getElementById('info-overlay').classList.add('open');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -759,21 +1493,29 @@ function fmt(n) {
 function nowKey() {
   const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 }
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 function fmtDate(s) {
   const d = new Date(s+'T12:00:00');
   return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
 }
-function getCat(id) { return CATS.find(c=>c.id===id)||CATS[CATS.length-1]; }
-function getLimits() { return limits[nowKey()] || {...DEF_LIMITS}; }
-function monthTx()  { return transactions.filter(t=>t.date.startsWith(nowKey())); }
-function esc(s)     { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function fmtDateLong(dateStr) {
+  const d = new Date(dateStr+'T12:00:00');
+  return `${DAY_NAMES[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
+}
+function getCat(id)    { return CATS.find(c=>c.id===id)||CATS[CATS.length-1]; }
+function getLimits()   { return limits[nowKey()] || {...DEF_LIMITS}; }
+function monthTx()     { return transactions.filter(t=>t.date.startsWith(nowKey())); }
+function esc(s)        { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
 function toast(msg, ok=true) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.style.borderColor = ok ? 'rgba(16,185,129,.4)' : 'rgba(244,63,94,.4)';
   el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'), 2500);
+  setTimeout(()=>el.classList.remove('show'), 2600);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -802,7 +1544,50 @@ function goTab(id, btn) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('view-'+id).classList.add('active');
-  if (id==='budget') renderBudget();
+  if (id==='budget')   renderBudget();
+  if (id==='calendar') renderCalendar();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   OVERDUE ALERTS
+═══════════════════════════════════════════════════════════ */
+function renderOverdueAlerts() {
+  const today  = todayStr();
+  const overdue = scheduledPayments.filter(s => !s.paid && s.date <= today);
+  const banner  = document.getElementById('alerts-banner');
+
+  if (!overdue.length) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  banner.style.display = 'block';
+  const header = `<div class="alerts-header"><i class="fa-solid fa-triangle-exclamation"></i> Pagos pendientes</div>`;
+  const cards = overdue.map(s => {
+    const cat = getCat(s.category);
+    const d   = new Date(s.date+'T12:00:00');
+    const t   = new Date(today+'T12:00:00');
+    const daysAgo = Math.round((t - d) / 86400000);
+    const daysLabel = daysAgo === 0 ? 'Hoy' : daysAgo === 1 ? 'Ayer' : `Hace ${daysAgo} días`;
+    return `<div class="alert-card" onclick="goToSchedDay('${s.date}')">
+      <div class="alert-ico">${cat.e}</div>
+      <div class="alert-info">
+        <div class="alert-title">${esc(s.desc)}</div>
+        <div class="alert-sub">⏰ ${daysLabel} · Toca para ver</div>
+      </div>
+      <div class="alert-amount">€ ${fmt(s.amount)}</div>
+    </div>`;
+  }).join('');
+  banner.innerHTML = header + cards;
+}
+
+function goToSchedDay(dateStr) {
+  const d = new Date(dateStr+'T12:00:00');
+  calYear   = d.getFullYear();
+  calMonth  = d.getMonth();
+  calSelDay = dateStr;
+  goTab('calendar', document.getElementById('tab-calendar'));
+  setTimeout(() => openDayPanel(dateStr), 120);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -810,6 +1595,8 @@ function goTab(id, btn) {
 ═══════════════════════════════════════════════════════════ */
 function renderHome() {
   updateHeader();
+  renderOverdueAlerts();
+
   const txs  = [...transactions].sort((a,b)=>new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00'));
   const list = document.getElementById('tx-list');
   document.getElementById('tx-count').textContent = txs.length + ' movimiento'+(txs.length!==1?'s':'');
@@ -883,6 +1670,267 @@ function renderBudget() {
         </div>
       </div>`;
   }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VIEW: CALENDARIO
+═══════════════════════════════════════════════════════════ */
+function renderCalendar() {
+  document.getElementById('cal-label').textContent = `${MESES[calMonth]} ${calYear}`;
+
+  const today = todayStr();
+  const mk    = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
+
+  // First weekday of month (Mon=0)
+  const firstDay = new Date(calYear, calMonth, 1);
+  let startDow = (firstDay.getDay() + 6) % 7; // Mon-based
+
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
+
+  // Build indicator maps
+  const txMap = {};
+  transactions
+    .filter(t => t.date.startsWith(mk))
+    .forEach(t => {
+      if (!txMap[t.date]) txMap[t.date] = { hasExp:false, hasInc:false, hasSched:false };
+      if (t.type==='expense') txMap[t.date].hasExp = true;
+      else                    txMap[t.date].hasInc = true;
+    });
+  scheduledPayments
+    .filter(s => s.date.startsWith(mk))
+    .forEach(s => {
+      if (!txMap[s.date]) txMap[s.date] = { hasExp:false, hasInc:false, hasSched:false };
+      txMap[s.date].hasSched = true;
+    });
+
+  let cells = '';
+
+  // Prev month fill
+  for (let i = 0; i < startDow; i++) {
+    const d = daysInPrev - startDow + 1 + i;
+    cells += `<div class="cal-cell other-month"><span class="cal-day-num">${d}</span></div>`;
+  }
+
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const info    = txMap[dateStr] || {};
+    const isToday = dateStr === today;
+    const isSel   = dateStr === calSelDay;
+    // Determine weekday (0=Mon ... 6=Sun); Sat=5, Sun=6
+    const dow = (new Date(calYear, calMonth, d).getDay() + 6) % 7;
+    const isWeekend = dow >= 5;
+
+    let dots = '';
+    if (info.hasInc || info.hasExp || info.hasSched) {
+      dots = '<div class="cal-dots">';
+      if (info.hasInc)   dots += '<div class="cal-dot income"></div>';
+      if (info.hasExp)   dots += '<div class="cal-dot expense"></div>';
+      if (info.hasSched) dots += '<div class="cal-dot sched"></div>';
+      dots += '</div>';
+    }
+
+    const cls = ['cal-cell', isToday?'today':'', isSel?'selected':'', isWeekend&&!isSel?'weekend-day':''].filter(Boolean).join(' ');
+
+    cells += `<div class="${cls}" onclick="selectCalDay('${dateStr}')">
+      <span class="cal-day-num">${d}</span>${dots}
+    </div>`;
+  }
+
+  // Next month fill
+  const total     = startDow + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= remaining; i++) {
+    cells += `<div class="cal-cell other-month"><span class="cal-day-num">${i}</span></div>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = cells;
+
+  // Month summary
+  const txsMth   = transactions.filter(t => t.date.startsWith(mk));
+  const inc      = txsMth.filter(t=>t.type==='income' ).reduce((s,t)=>s+t.amount,0);
+  const exp      = txsMth.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const pending  = scheduledPayments.filter(s => s.date.startsWith(mk) && !s.paid);
+
+  let sumHtml = `<div class="cal-month-summary">
+    <div class="bsum-card">
+      <div class="bsum-val green">€ ${fmt(inc)}</div>
+      <div class="bsum-label">Ingresos del mes</div>
+    </div>
+    <div class="bsum-card">
+      <div class="bsum-val red">€ ${fmt(exp)}</div>
+      <div class="bsum-label">Gastos del mes</div>
+    </div>
+  </div>`;
+
+  if (pending.length > 0) {
+    sumHtml += `<div class="cal-sched-pending">
+      <i class="fa-solid fa-clock"></i>
+      ${pending.length} pago${pending.length!==1?'s':''} programado${pending.length!==1?'s':''} pendiente${pending.length!==1?'s':''}
+      · € ${fmt(pending.reduce((s,x)=>s+x.amount,0))}
+    </div>`;
+  }
+
+  document.getElementById('cal-month-summary').innerHTML = sumHtml;
+}
+
+function calPrev() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  calSelDay = null;
+  renderCalendar();
+}
+
+function calNext() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  calSelDay = null;
+  renderCalendar();
+}
+
+function selectCalDay(dateStr) {
+  calSelDay = dateStr;
+  renderCalendar();
+  openDayPanel(dateStr);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DAY PANEL
+═══════════════════════════════════════════════════════════ */
+function openDayPanel(dateStr) {
+  panelDate = dateStr;
+  document.getElementById('day-panel-title').textContent = fmtDateLong(dateStr);
+
+  // Transactions
+  const dayTxs = transactions.filter(t => t.date === dateStr)
+    .sort((a,b) => b.amount - a.amount);
+  const txList = document.getElementById('day-tx-list');
+
+  if (!dayTxs.length) {
+    txList.innerHTML = `<div class="day-empty">Sin movimientos este día</div>`;
+  } else {
+    txList.innerHTML = dayTxs.map(t => {
+      const cat  = getCat(t.category);
+      const sign = t.type==='expense' ? '-' : '+';
+      const cls  = t.type==='expense' ? 'red' : 'green';
+      return `<div class="tx-item" style="margin-bottom:7px;" onclick="closeSheet('day-overlay');setTimeout(()=>openEditSheet(${t.id}),120)">
+        <div class="tx-icon" style="background:${cat.bg}">${cat.e}</div>
+        <div class="tx-info">
+          <div class="tx-name">${esc(t.desc)}</div>
+          <div class="tx-meta">${cat.label}</div>
+        </div>
+        <div class="tx-amount ${cls}">${sign}€ ${fmt(t.amount)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Scheduled payments
+  const dayScheds = scheduledPayments.filter(s => s.date === dateStr);
+  const schedList = document.getElementById('day-sched-list');
+
+  if (!dayScheds.length) {
+    schedList.innerHTML = `<div class="day-empty">Sin pagos programados</div>`;
+  } else {
+    schedList.innerHTML = dayScheds.map(s => {
+      const cat = getCat(s.category);
+      return `<div class="sched-item ${s.paid?'paid':''}">
+        <div class="sched-ico">${cat.e}</div>
+        <div class="sched-info">
+          <div class="sched-name">${esc(s.desc)}</div>
+          <div class="sched-meta">${cat.label}${s.paid?' · ✅ Registrado':''}</div>
+        </div>
+        <div class="sched-right">
+          <span class="sched-amount">€ ${fmt(s.amount)}</span>
+          <div class="sched-actions">
+            ${!s.paid ? `<button class="sched-btn pay" onclick="markSchedPaid(${s.id})">✅ Pagar</button>` : ''}
+            <button class="sched-btn del" onclick="deleteSched(${s.id})">🗑</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('day-overlay').classList.add('open');
+}
+
+function openAddSchedFromPanel() {
+  if (!panelDate) return;
+  const date = panelDate;
+  closeSheet('day-overlay');
+  setTimeout(() => openAddSchedSheet(date), 260);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCHEDULED PAYMENTS
+═══════════════════════════════════════════════════════════ */
+function openAddSchedSheet(dateStr) {
+  panelDate = dateStr;
+  document.getElementById('sf-amount').value = '';
+  document.getElementById('sf-desc').value   = '';
+  const d = new Date(dateStr+'T12:00:00');
+  document.getElementById('sched-date-label').textContent =
+    `Para el ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
+  schedSelCat = 'hogar';
+  renderSchedCatGrid();
+  document.getElementById('sched-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('sf-amount').focus(), 360);
+}
+
+function renderSchedCatGrid() {
+  const cats = CATS.filter(c => EXP_IDS.includes(c.id));
+  document.getElementById('sched-cat-grid').innerHTML = cats.map(cat => `
+    <button class="cat-btn ${schedSelCat===cat.id?'sel':''}" onclick="pickSchedCat('${cat.id}')">
+      <span class="ce">${cat.e}</span>
+      <span class="cl">${cat.label}</span>
+    </button>`).join('');
+}
+
+function pickSchedCat(id) { schedSelCat = id; renderSchedCatGrid(); }
+
+function saveScheduled() {
+  const amount = parseFloat(document.getElementById('sf-amount').value);
+  const desc   = document.getElementById('sf-desc').value.trim();
+  if (!amount || amount <= 0) { toast('⚠ Introduce un importe válido', false); return; }
+  if (!desc)                  { toast('⚠ Escribe una descripción', false);     return; }
+
+  scheduledPayments.push({
+    id: Date.now(), desc, amount,
+    category: schedSelCat, date: panelDate, paid: false
+  });
+  save();
+  closeSheet('sched-overlay');
+  renderCalendar();
+  renderOverdueAlerts();
+  toast('⏰ Pago programado guardado');
+}
+
+function markSchedPaid(id) {
+  const s = scheduledPayments.find(x => x.id === id);
+  if (!s) return;
+  s.paid = true;
+  // Create real expense transaction
+  transactions.push({
+    id: Date.now(), type: 'expense',
+    amount: s.amount, desc: s.desc,
+    category: s.category, date: s.date
+  });
+  save();
+  closeSheet('day-overlay');
+  renderHome();
+  renderCalendar();
+  renderOverdueAlerts();
+  toast(`✅ Pago registrado: ${s.desc}`);
+}
+
+function deleteSched(id) {
+  if (!confirm('¿Eliminar este pago programado?')) return;
+  scheduledPayments = scheduledPayments.filter(x => x.id !== id);
+  save();
+  closeSheet('day-overlay');
+  renderCalendar();
+  renderOverdueAlerts();
+  toast('🗑 Pago programado eliminado');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1078,6 +2126,18 @@ function seedDemo() {
     { id:7, type:'expense', amount:89.50, desc:'Ropa niños',        category:'ropa',          date:`${y}-${m}-10` },
     { id:8, type:'expense', amount:28.40, desc:'Farmacia',          category:'salud',         date:`${y}-${m}-08` },
   ];
+
+  // Demo scheduled payment (today + 5 days, pending)
+  const future = new Date();
+  future.setDate(future.getDate() + 5);
+  const fy = future.getFullYear();
+  const fm = String(future.getMonth()+1).padStart(2,'0');
+  const fd = String(future.getDate()).padStart(2,'0');
+
+  scheduledPayments = [
+    { id:9001, desc:'Alquiler', amount:850, category:'hogar', date:`${fy}-${fm}-${fd}`, paid:false },
+  ];
+
   limits[`${y}-${m}`] = {...DEF_LIMITS};
   save();
 }
@@ -1087,9 +2147,11 @@ function seedDemo() {
 ═══════════════════════════════════════════════════════════ */
 (function init() {
   load();
+  applyTheme();
   if (!transactions.length) seedDemo();
   renderCatGrid();
   renderEditCatGrid();
+  renderSchedCatGrid();
   document.getElementById('hdr-name').textContent = homeName;
   renderHome();
 })();
