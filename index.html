@@ -833,7 +833,110 @@
       z-index: 200; white-space: nowrap;
     }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ─── CLOUD / ACCOUNT ───────────────────────────── */
+    .sync-dot {
+      position: absolute; top: 5px; right: 5px;
+      width: 8px; height: 8px; border-radius: 50%;
+      border: 2px solid var(--bg);
+      transition: background .4s var(--ease);
+    }
+    .sync-dot.offline  { background: var(--faint); }
+    .sync-dot.syncing  { background: var(--amber); animation: pulse-dot 1s infinite; }
+    .sync-dot.synced   { background: var(--green); }
+    .sync-dot.error    { background: var(--red); }
+    @keyframes pulse-dot {
+      0%,100% { opacity:1; } 50% { opacity:.3; }
+    }
+    .hdr-icon-btn { position: relative; }
+
+    /* Account modal */
+    .cloud-profile {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px 0 16px;
+    }
+    .cloud-avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      border: 3px solid var(--accent2);
+      box-shadow: 0 0 0 6px rgba(139,92,246,.12);
+      margin-bottom: 10px;
+      background: var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; overflow: hidden;
+    }
+    .cloud-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .cloud-user-name { font-size: 16px; font-weight: 800; letter-spacing: -.3px; }
+    .cloud-user-email { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .cloud-status-row {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    .cloud-status-ico { font-size: 16px; }
+    .cloud-status-text { font-size: 13px; font-weight: 600; flex: 1; }
+    .cloud-status-sub { font-size: 11px; color: var(--muted); }
+    .btn-google {
+      width: 100%; padding: 13px;
+      border-radius: var(--r);
+      background: #fff; color: #1f1f1f;
+      font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      border: 1px solid #dadce0;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+      transition: box-shadow .18s var(--ease), transform .12s var(--ease);
+      margin-bottom: 10px;
+    }
+    .btn-google:active { transform: scale(.98); }
+    .btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .btn-logout {
+      width: 100%; padding: 11px;
+      border-radius: var(--r);
+      background: var(--red-bg); color: var(--red);
+      border: 1px solid rgba(244,63,94,.25);
+      font-size: 13px; font-weight: 700;
+      transition: opacity .15s; margin-bottom: 10px;
+    }
+    .btn-logout:active { opacity: .7; }
+
+    /* Setup guide */
+    .setup-guide {
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: var(--r); padding: 14px;
+      margin-top: 6px;
+    }
+    .setup-guide-title {
+      font-size: 12px; font-weight: 700; color: var(--amber);
+      display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+    }
+    .setup-step {
+      display: flex; gap: 10px; align-items: flex-start; margin-bottom: 9px;
+    }
+    .setup-step-num {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(139,92,246,.2); color: var(--accent2);
+      font-size: 10px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .setup-step-text {
+      font-size: 12px; color: var(--muted); line-height: 1.5;
+    }
+    .setup-step-text a {
+      color: var(--accent2); font-weight: 700; text-decoration: none;
+    }
+    .setup-config-box {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 8px; padding: 10px 12px; margin-top: 8px;
+      font-size: 11px; color: var(--muted); font-family: monospace;
+      line-height: 1.7;
+    }
   </style>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
   <!-- FontAwesome icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -861,6 +964,10 @@
         </button>
         <button class="hdr-icon-btn" onclick="openInfo()" title="Información de la app" aria-label="Información">
           <i class="fa-solid fa-circle-info"></i>
+        </button>
+        <button class="hdr-icon-btn" id="cloud-btn" onclick="openCloud()" title="Cuenta y sincronización" aria-label="Nube">
+          <i class="fa-solid fa-cloud" id="cloud-icon"></i>
+          <span class="sync-dot offline" id="sync-dot"></span>
         </button>
       </div>
     </div>
@@ -1374,6 +1481,94 @@
     </div>
   </div>
 
+  <!-- ══ MODAL: CUENTA / NUBE ═════════════════════════════ -->
+  <div class="overlay" id="cloud-overlay" onclick="closeOnBg(event,'cloud-overlay')">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-title">☁️ Cuenta y sincronización</div>
+
+      <!-- Logged OUT view -->
+      <div id="cloud-logged-out">
+        <div style="text-align:center;padding:10px 0 20px;">
+          <div style="font-size:48px;margin-bottom:10px;">☁️</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Guarda tus datos en la nube</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6;">
+            Accede a tus finanzas desde cualquier dispositivo.<br>
+            Tus datos actuales se migrarán automáticamente.
+          </div>
+        </div>
+
+        <!-- Google login button -->
+        <button class="btn-google" onclick="loginWithGoogle()">
+          <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.2 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-7.9 19.7-20 0-1.3-.1-2.7-.1-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 9 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 37 24 37c-5.2 0-9.6-3.7-11.2-8.8l-6.5 5C9.7 39 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.4 4.2-4.3 5.5l6.2 5.2C40.6 35.5 44 30.2 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+          Iniciar sesión con Google
+        </button>
+
+        <!-- Setup guide (shown if Firebase not configured) -->
+        <div class="setup-guide" id="setup-guide">
+          <div class="setup-guide-title">
+            <i class="fa-solid fa-wrench"></i> Configurar Firebase primero
+          </div>
+          <div class="setup-step">
+            <div class="setup-step-num">1</div>
+            <div class="setup-step-text">Ve a <a href="https://firebase.google.com" target="_blank">firebase.google.com</a> y crea un proyecto gratuito.</div>
+          </div>
+          <div class="setup-step">
+            <div class="setup-step-num">2</div>
+            <div class="setup-step-text">En el proyecto, activa <strong>Authentication</strong> → proveedor Google.</div>
+          </div>
+          <div class="setup-step">
+            <div class="setup-step-num">3</div>
+            <div class="setup-step-text">Activa <strong>Firestore Database</strong> en modo producción.</div>
+          </div>
+          <div class="setup-step">
+            <div class="setup-step-num">4</div>
+            <div class="setup-step-text">En Configuración del proyecto, copia el objeto <code>firebaseConfig</code> y reemplaza el marcador en el código de esta app:</div>
+          </div>
+          <div class="setup-config-box">
+            const FIREBASE_CONFIG = {<br>
+            &nbsp;&nbsp;apiKey: "TU_API_KEY",<br>
+            &nbsp;&nbsp;authDomain: "tu-proyecto.firebaseapp.com",<br>
+            &nbsp;&nbsp;projectId: "tu-proyecto",<br>
+            &nbsp;&nbsp;...<br>
+            };
+          </div>
+        </div>
+      </div>
+
+      <!-- Logged IN view -->
+      <div id="cloud-logged-in" style="display:none;">
+        <div class="cloud-profile">
+          <div class="cloud-avatar" id="cloud-avatar">👤</div>
+          <div class="cloud-user-name" id="cloud-user-name">Usuario</div>
+          <div class="cloud-user-email" id="cloud-user-email">usuario@gmail.com</div>
+        </div>
+
+        <div class="cloud-status-row">
+          <span class="cloud-status-ico" id="cloud-status-ico">🟢</span>
+          <div>
+            <div class="cloud-status-text" id="cloud-status-text">Sincronizado</div>
+            <div class="cloud-status-sub" id="cloud-status-sub">Todos los datos están en la nube</div>
+          </div>
+        </div>
+
+        <button class="btn-save" onclick="forcSync()" style="margin-bottom:10px;">
+          <i class="fa-solid fa-rotate" style="margin-right:7px;"></i>Sincronizar ahora
+        </button>
+
+        <button class="btn-logout" onclick="logoutCloud()">
+          <i class="fa-solid fa-right-from-bracket" style="margin-right:7px;"></i>Cerrar sesión
+        </button>
+
+        <div style="font-size:11px;color:var(--faint);text-align:center;margin-top:8px;line-height:1.5;">
+          Los datos se sincronizan automáticamente al guardar.<br>
+          Accede desde cualquier dispositivo con esta cuenta.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ══ TOAST ════════════════════════════════════════════ -->
   <div id="toast"></div>
 
@@ -1448,6 +1643,8 @@ function save() {
   localStorage.setItem('hf2_sched', JSON.stringify(scheduledPayments));
   localStorage.setItem('hf2_name',  homeName);
   localStorage.setItem('hf2_theme', isDarkMode ? 'dark' : 'light');
+  // Also sync to cloud if logged in
+  saveToCloud();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1482,6 +1679,228 @@ function openHelp() {
 ═══════════════════════════════════════════════════════════ */
 function openInfo() {
   document.getElementById('info-overlay').classList.add('open');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CLOUD / FIREBASE
+═══════════════════════════════════════════════════════════ */
+
+// ⚠️  REEMPLAZA ESTE OBJETO CON TU CONFIGURACIÓN DE FIREBASE
+// Ve a: https://console.firebase.google.com → Tu proyecto → Configuración
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyCNOQYnMAJ5iW5ON0D1A1cElAji0C41Sms",
+  authDomain:        "home-finance-ee8fd.firebaseapp.com",
+  projectId:         "home-finance-ee8fd",
+  storageBucket:     "home-finance-ee8fd.firebasestorage.app",
+  messagingSenderId: "484237400024",
+  appId:             "1:484237400024:web:36c2a0021b0d0ed79e84ad",
+  measurementId:     "G-WENMKSJBW9"
+};
+
+const FIREBASE_READY = FIREBASE_CONFIG.apiKey !== 'FIREBASE_API_KEY';
+
+let fbApp = null, fbAuth = null, fbDb = null;
+let currentUser = null;
+let cloudSyncing = false;
+let snapshotUnsub = null;
+
+function initFirebase() {
+  if (!FIREBASE_READY) {
+    setSyncDot('offline');
+    return;
+  }
+  try {
+    if (!firebase.apps.length) {
+      fbApp  = firebase.initializeApp(FIREBASE_CONFIG);
+    } else {
+      fbApp  = firebase.app();
+    }
+    fbAuth = firebase.auth();
+    fbDb   = firebase.firestore();
+
+    fbAuth.onAuthStateChanged(user => {
+      currentUser = user;
+      if (user) {
+        updateCloudUI(user);
+        setSyncDot('syncing');
+        loadFromCloud();
+      } else {
+        updateCloudUI(null);
+        setSyncDot('offline');
+        if (snapshotUnsub) { snapshotUnsub(); snapshotUnsub = null; }
+      }
+    });
+  } catch(e) {
+    console.warn('Firebase init error:', e);
+    setSyncDot('error');
+  }
+}
+
+function setSyncDot(state) {
+  const dot  = document.getElementById('sync-dot');
+  const icon = document.getElementById('cloud-icon');
+  if (!dot) return;
+  dot.className = 'sync-dot ' + state;
+  if (icon) {
+    icon.className = state === 'synced' ? 'fa-solid fa-cloud-arrow-up'
+                   : state === 'syncing' ? 'fa-solid fa-rotate'
+                   : state === 'error'   ? 'fa-solid fa-cloud-slash'
+                   : 'fa-solid fa-cloud';
+  }
+}
+
+function updateCloudUI(user) {
+  const out = document.getElementById('cloud-logged-out');
+  const inn = document.getElementById('cloud-logged-in');
+  const guide = document.getElementById('setup-guide');
+  if (!out || !inn) return;
+
+  if (user) {
+    out.style.display = 'none';
+    inn.style.display = 'block';
+    document.getElementById('cloud-user-name').textContent  = user.displayName || 'Usuario';
+    document.getElementById('cloud-user-email').textContent = user.email || '';
+    const av = document.getElementById('cloud-avatar');
+    if (user.photoURL) {
+      av.innerHTML = `<img src="${user.photoURL}" alt="avatar" />`;
+    } else {
+      av.textContent = (user.displayName || 'U')[0].toUpperCase();
+    }
+  } else {
+    out.style.display = 'block';
+    inn.style.display = 'none';
+    // Show setup guide only if Firebase not configured
+    if (guide) guide.style.display = FIREBASE_READY ? 'none' : 'block';
+  }
+}
+
+function setCloudStatus(ico, text, sub) {
+  const i = document.getElementById('cloud-status-ico');
+  const t = document.getElementById('cloud-status-text');
+  const s = document.getElementById('cloud-status-sub');
+  if (i) i.textContent = ico;
+  if (t) t.textContent = text;
+  if (s) s.textContent = sub;
+}
+
+function openCloud() {
+  updateCloudUI(currentUser);
+  document.getElementById('cloud-overlay').classList.add('open');
+}
+
+async function loginWithGoogle() {
+  if (!FIREBASE_READY) {
+    toast('⚠️ Configura Firebase primero (ver guía)', false);
+    return;
+  }
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    setSyncDot('syncing');
+    await fbAuth.signInWithPopup(provider);
+    closeSheet('cloud-overlay');
+    toast('✅ Sesión iniciada correctamente');
+  } catch(e) {
+    setSyncDot('error');
+    toast('❌ Error al iniciar sesión: ' + e.message, false);
+  }
+}
+
+async function logoutCloud() {
+  if (!fbAuth) return;
+  try {
+    await fbAuth.signOut();
+    closeSheet('cloud-overlay');
+    toast('👋 Sesión cerrada');
+  } catch(e) {
+    toast('❌ Error al cerrar sesión', false);
+  }
+}
+
+async function saveToCloud() {
+  if (!FIREBASE_READY || !currentUser || !fbDb) return;
+  cloudSyncing = true;
+  setSyncDot('syncing');
+  setCloudStatus('🔄', 'Sincronizando...', 'Guardando en la nube');
+  try {
+    const uid = currentUser.uid;
+    const ref = fbDb.collection('users').doc(uid);
+    await ref.set({
+      transactions,
+      scheduledPayments,
+      limits,
+      homeName,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    cloudSyncing = false;
+    setSyncDot('synced');
+    setCloudStatus('🟢', 'Sincronizado', new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'}) + ' — Datos guardados en la nube');
+  } catch(e) {
+    cloudSyncing = false;
+    setSyncDot('error');
+    setCloudStatus('🔴', 'Error de sincronización', e.message);
+    console.warn('Cloud save error:', e);
+  }
+}
+
+async function loadFromCloud() {
+  if (!FIREBASE_READY || !currentUser || !fbDb) return;
+  setSyncDot('syncing');
+  try {
+    const uid = currentUser.uid;
+    const ref = fbDb.collection('users').doc(uid);
+    const doc = await ref.get();
+
+    if (doc.exists) {
+      const d = doc.data();
+      transactions      = d.transactions      || [];
+      scheduledPayments = d.scheduledPayments || [];
+      limits            = d.limits            || {};
+      homeName          = d.homeName          || 'Home Finance 🏠';
+      // Also update localStorage cache
+      localStorage.setItem('hf2_tx',    JSON.stringify(transactions));
+      localStorage.setItem('hf2_lim',   JSON.stringify(limits));
+      localStorage.setItem('hf2_sched', JSON.stringify(scheduledPayments));
+      localStorage.setItem('hf2_name',  homeName);
+    } else {
+      // First login — migrate local data to cloud
+      await saveToCloud();
+    }
+
+    setSyncDot('synced');
+    setCloudStatus('🟢', 'Sincronizado', 'Datos cargados desde la nube');
+    document.getElementById('hdr-name').textContent = homeName;
+    renderHome();
+    renderOverdueAlerts();
+
+    // Real-time listener
+    if (snapshotUnsub) snapshotUnsub();
+    snapshotUnsub = ref.onSnapshot(snap => {
+      if (!snap.exists || cloudSyncing) return;
+      const d = snap.data();
+      transactions      = d.transactions      || transactions;
+      scheduledPayments = d.scheduledPayments || scheduledPayments;
+      limits            = d.limits            || limits;
+      homeName          = d.homeName          || homeName;
+      localStorage.setItem('hf2_tx',    JSON.stringify(transactions));
+      localStorage.setItem('hf2_lim',   JSON.stringify(limits));
+      localStorage.setItem('hf2_sched', JSON.stringify(scheduledPayments));
+      localStorage.setItem('hf2_name',  homeName);
+      document.getElementById('hdr-name').textContent = homeName;
+      renderHome();
+      setSyncDot('synced');
+    });
+
+  } catch(e) {
+    setSyncDot('error');
+    setCloudStatus('🔴', 'Error al cargar', e.message);
+    console.warn('Cloud load error:', e);
+  }
+}
+
+async function forcSync() {
+  if (!currentUser) return;
+  await saveToCloud();
+  toast('☁️ Sincronizado con la nube');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2154,6 +2573,7 @@ function seedDemo() {
   renderSchedCatGrid();
   document.getElementById('hdr-name').textContent = homeName;
   renderHome();
+  initFirebase();
 })();
 </script>
 </body>
