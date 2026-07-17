@@ -1704,7 +1704,22 @@ let currentUser = null;
 let cloudSyncing = false;
 let snapshotUnsub = null;
 
+function clearLocalData() {
+  transactions      = [];
+  limits            = {};
+  scheduledPayments = [];
+  homeName          = 'Home Finance 🏠';
+  localStorage.removeItem('hf2_tx');
+  localStorage.removeItem('hf2_lim');
+  localStorage.removeItem('hf2_sched');
+  localStorage.removeItem('hf2_name');
+  const hdrName = document.getElementById('hdr-name');
+  if (hdrName) hdrName.textContent = homeName;
+  renderHome();
+}
+
 function initFirebase() {
+
   if (!FIREBASE_READY) {
     setSyncDot('offline');
     return;
@@ -1719,7 +1734,6 @@ function initFirebase() {
     fbDb   = firebase.firestore();
 
     fbAuth.onAuthStateChanged(user => {
-      const wasLoggedIn = (currentUser !== null);
       currentUser = user;
       if (user) {
         updateCloudUI(user);
@@ -1729,28 +1743,7 @@ function initFirebase() {
         updateCloudUI(null);
         setSyncDot('offline');
         if (snapshotUnsub) { snapshotUnsub(); snapshotUnsub = null; }
-        
-        if (wasLoggedIn) {
-          // Limpiar datos locales al cerrar sesión activamente
-          transactions      = [];
-          scheduledPayments = [];
-          limits            = {};
-          homeName          = 'Home Finance 🏠';
-          
-          localStorage.removeItem('hf2_tx');
-          localStorage.removeItem('hf2_lim');
-          localStorage.removeItem('hf2_sched');
-          localStorage.removeItem('hf2_name');
-          
-          const hdrName = document.getElementById('hdr-name');
-          if (hdrName) hdrName.textContent = homeName;
-          
-          renderHome();
-          const viewBudget = document.getElementById('view-budget');
-          if (viewBudget && viewBudget.classList.contains('active')) renderBudget();
-          const viewCalendar = document.getElementById('view-calendar');
-          if (viewCalendar && viewCalendar.classList.contains('active')) renderCalendar();
-        }
+        clearLocalData();
       }
     });
   } catch(e) {
