@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Home Finance</title>
   <meta name="description" content="App de economía familiar: controla ingresos, gastos, presupuesto y calendario de pagos" />
+  <meta name="theme-color" content="#0d1117" />
+
+  <!-- Ícono y Manifiesto de la app para móviles -->
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="manifest" href="manifest.json" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -271,29 +277,6 @@
     .empty .ico { font-size: 44px; opacity: .35; margin-bottom: 12px; display: block; }
     .empty h4   { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
     .empty p    { font-size: 12px; line-height: 1.5; }
-
-    /* ─── STATS VIEW ─────────────────────────────────── */
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 14px;
-      margin-bottom: 10px;
-    }
-    .stat-month {
-      font-size: 15px; font-weight: 800;
-      margin-bottom: 10px; text-transform: capitalize; letter-spacing: -.2px;
-    }
-    .stat-row {
-      display: flex; justify-content: space-between;
-      font-size: 13px; font-weight: 600;
-      margin-bottom: 6px;
-    }
-    .stat-row.res {
-      margin-top: 10px; padding-top: 10px;
-      border-top: 1px dashed var(--border2);
-      font-size: 15px; font-weight: 800;
-    }
 
     /* ─── BUDGET VIEW ────────────────────────────────── */
     .budget-summary {
@@ -1021,7 +1004,6 @@
     <button class="tab active" id="tab-home"     onclick="goTab('home',     this)"><i class="fa-solid fa-list"></i>Movimientos</button>
     <button class="tab"        id="tab-budget"   onclick="goTab('budget',   this)"><i class="fa-solid fa-chart-pie"></i>Presupuesto</button>
     <button class="tab"        id="tab-calendar" onclick="goTab('calendar', this)"><i class="fa-solid fa-calendar-days"></i>Calendario</button>
-    <button class="tab"        id="tab-stats"    onclick="goTab('stats',    this)"><i class="fa-solid fa-chart-line"></i>Estadística</button>
   </div>
 
   <!-- ══ MAIN ════════════════════════════════════════════ -->
@@ -1107,14 +1089,6 @@
           <span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block;"></span>Pago programado
         </span>
       </div>
-    </div>
-
-    <!-- VIEW: ESTADÍSTICA -->
-    <div class="view" id="view-stats">
-      <div class="sec-header">
-        <span class="sec-title">Resultados por Mes</span>
-      </div>
-      <div id="stats-list"></div>
     </div>
 
   </main>
@@ -1395,23 +1369,6 @@
 
       <div class="help-divider"></div>
 
-      <!-- ESTADÍSTICA -->
-      <div class="help-section">
-        <div class="help-section-title">
-          <span class="hi" style="background:rgba(236,72,153,.15)">📈</span>
-          Estadística
-        </div>
-        <div class="help-item">
-          <span class="help-item-ico">📊</span>
-          <div class="help-item-text">
-            <div class="help-item-title">Balance mensual</div>
-            <div class="help-item-desc">En la pestaña <span class="help-badge">Estadística</span> puedes ver un resumen mensual de tus ingresos y gastos, junto con el resultado neto final (positivo o negativo) mes a mes.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="help-divider"></div>
-
       <!-- ALERTAS -->
       <div class="help-section">
         <div class="help-section-title">
@@ -1453,23 +1410,13 @@
       <div class="app-version-card">
         <span class="app-ver-logo">🏠</span>
         <div class="app-ver-name">Home Finance</div>
-        <div class="app-ver-badge">v1.05</div>
+        <div class="app-ver-badge">v1.01</div>
         <div class="app-ver-date">Julio 2026 · Desarrollado para uso familiar</div>
       </div>
 
       <!-- Changelog -->
       <div class="changelog-title">
         <i class="fa-solid fa-clock-rotate-left"></i> Historial de cambios
-      </div>
-
-      <!-- v1.05 -->
-      <div class="cl-entry">
-        <div class="cl-version">Versión 1.05</div>
-        <div class="cl-date">Julio 2026 — Actualización</div>
-        <div class="cl-change">
-          <span class="cl-change-ico">📈</span>
-          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Pestaña de <strong>Estadística</strong> añadida con comparativa visual mensual de ingresos, gastos y resultado neto</span>
-        </div>
       </div>
 
       <!-- v1.01 -->
@@ -1533,7 +1480,7 @@
       </div>
 
       <div class="info-footer">
-        🏠 Home Finance · v1.05<br>
+        🏠 Home Finance · v1.01<br>
         Datos guardados en tu dispositivo · Sin conexión requerida
       </div>
 
@@ -1809,8 +1756,6 @@ function initFirebase() {
           if (viewBudget && viewBudget.classList.contains('active')) renderBudget();
           const viewCalendar = document.getElementById('view-calendar');
           if (viewCalendar && viewCalendar.classList.contains('active')) renderCalendar();
-          const viewStats = document.getElementById('view-stats');
-          if (viewStats && viewStats.classList.contains('active')) renderStats();
         }
       }
     });
@@ -2049,7 +1994,6 @@ function goTab(id, btn) {
   document.getElementById('view-'+id).classList.add('active');
   if (id==='budget')   renderBudget();
   if (id==='calendar') renderCalendar();
-  if (id==='stats')    renderStats();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2297,59 +2241,6 @@ function selectCalDay(dateStr) {
   calSelDay = dateStr;
   renderCalendar();
   openDayPanel(dateStr);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   VIEW: ESTADÍSTICA
-═══════════════════════════════════════════════════════════ */
-function renderStats() {
-  const list = document.getElementById('stats-list');
-  if (!transactions.length) {
-    list.innerHTML = `
-      <div class="empty">
-        <span class="ico">📊</span>
-        <h4>Sin datos</h4>
-        <p>Añade movimientos para ver tus estadísticas mensuales.</p>
-      </div>`;
-    return;
-  }
-
-  const monthsData = {};
-  transactions.forEach(t => {
-    const mk = t.date.substring(0, 7);
-    if (!monthsData[mk]) monthsData[mk] = { inc: 0, exp: 0 };
-    if (t.type === 'income') monthsData[mk].inc += t.amount;
-    else monthsData[mk].exp += t.amount;
-  });
-
-  const sortedKeys = Object.keys(monthsData).sort((a,b) => b.localeCompare(a));
-  
-  list.innerHTML = sortedKeys.map(k => {
-    const [y, m] = k.split('-');
-    const mName = MESES[parseInt(m, 10) - 1] + ' ' + y;
-    const d = monthsData[k];
-    const res = d.inc - d.exp;
-    const resCls = res >= 0 ? 'green' : 'red';
-    const resSign = res > 0 ? '+' : (res < 0 ? '-' : '');
-
-    return `
-      <div class="stat-card">
-        <div class="stat-month">${mName}</div>
-        <div class="stat-row">
-          <span style="color:var(--muted)">Ingresos</span>
-          <span class="green">€ ${fmt(d.inc)}</span>
-        </div>
-        <div class="stat-row">
-          <span style="color:var(--muted)">Gastos</span>
-          <span class="red">€ ${fmt(d.exp)}</span>
-        </div>
-        <div class="stat-row res">
-          <span>Resultado</span>
-          <span class="${resCls}">${resSign}€ ${fmt(Math.abs(res))}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
 }
 
 /* ═══════════════════════════════════════════════════════════
