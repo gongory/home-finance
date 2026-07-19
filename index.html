@@ -1590,6 +1590,12 @@
             <span>👨‍👩‍👧‍👦 Compartir Cuenta</span>
             <span id="family-status-badge" style="font-size: 10px; background: var(--green-bg); color: var(--green); padding: 2px 6px; border-radius: 4px; display: none;">Conectado</span>
           </div>
+          
+          <div id="family-toggle-group" style="display: none; background: var(--surface); border-radius: 8px; padding: 4px; margin-bottom: 12px; gap: 4px;">
+             <button id="btn-view-personal" onclick="toggleFamilyView('personal')" style="flex:1; padding: 8px; border-radius: 6px; background: var(--accent); color: white; border: none; font-size: 12px; font-weight: 600;">Privada</button>
+             <button id="btn-view-family" onclick="toggleFamilyView('family')" style="flex:1; padding: 8px; border-radius: 6px; background: transparent; color: var(--faint); border: none; font-size: 12px; font-weight: 600;">Familia</button>
+          </div>
+
           <div id="family-code-display" style="font-size: 16px; font-weight: 800; letter-spacing: 2px; color: var(--accent2); text-align: center; margin: 10px 0; display: none;"></div>
           
           <button class="btn-save" onclick="generateFamilyCode()" id="btn-create-family" style="background: rgba(139,92,246,.15); color: var(--accent2); box-shadow: none; font-size: 13px; padding: 10px;">
@@ -1599,7 +1605,7 @@
             Unirse con Código
           </button>
           <button class="btn-delete" onclick="leaveFamily()" id="btn-leave-family" style="display: none; padding: 10px; font-size: 13px; margin-top: 6px;">
-            Salir de la Cuenta Compartida
+            Desvincular Familia
           </button>
         </div>
 
@@ -1662,6 +1668,7 @@ let limits            = {};          // { "2026-07": { alimentacion:500, ... } }
 let scheduledPayments = [];          // { id, desc, amount, category, date, paid }
 let homeName          = 'Home Finance 🏠';
 let currentFamilyId   = null;
+let knownFamilyId     = null;
 let isDarkMode        = true;
 let txType            = 'expense';
 let selCat            = 'alimentacion';
@@ -1686,6 +1693,7 @@ function load() {
     scheduledPayments = JSON.parse(localStorage.getItem('hf2_sched') || '[]');
     homeName          = localStorage.getItem('hf2_name') || 'Home Finance 🏠';
     currentFamilyId   = localStorage.getItem('hf2_family') || null;
+    knownFamilyId     = localStorage.getItem('hf2_known_family') || currentFamilyId;
     const savedTheme  = localStorage.getItem('hf2_theme');
     isDarkMode        = savedTheme === null ? true : savedTheme === 'dark';
   } catch(e) {}
@@ -1697,6 +1705,8 @@ function save() {
   localStorage.setItem('hf2_name',  homeName);
   if (currentFamilyId) localStorage.setItem('hf2_family', currentFamilyId);
   else localStorage.removeItem('hf2_family');
+  if (knownFamilyId) localStorage.setItem('hf2_known_family', knownFamilyId);
+  else localStorage.removeItem('hf2_known_family');
   localStorage.setItem('hf2_theme', isDarkMode ? 'dark' : 'light');
   // Also sync to cloud if logged in
   saveToCloud();
@@ -1909,17 +1919,41 @@ function updateFamilyUI() {
   const btnCreate = document.getElementById('btn-create-family');
   const btnJoin = document.getElementById('btn-join-family');
   const btnLeave = document.getElementById('btn-leave-family');
+  const toggleGrp = document.getElementById('family-toggle-group');
+  const btnPers = document.getElementById('btn-view-personal');
+  const btnFam = document.getElementById('btn-view-family');
   
   if (!badge) return;
 
-  if (currentFamilyId) {
-    badge.style.display = 'inline-block';
+  if (knownFamilyId) {
+    toggleGrp.style.display = 'flex';
     codeDisp.style.display = 'block';
-    codeDisp.textContent = `Código: ${currentFamilyId}`;
+    codeDisp.textContent = `Código: ${knownFamilyId}`;
     btnCreate.style.display = 'none';
     btnJoin.style.display = 'none';
     btnLeave.style.display = 'block';
+
+    if (currentFamilyId) {
+      badge.style.display = 'inline-block';
+      badge.textContent = 'Modo Familia';
+      badge.style.background = 'var(--green-bg)';
+      badge.style.color = 'var(--green)';
+      btnFam.style.background = 'var(--accent)';
+      btnFam.style.color = 'white';
+      btnPers.style.background = 'transparent';
+      btnPers.style.color = 'var(--faint)';
+    } else {
+      badge.style.display = 'inline-block';
+      badge.textContent = 'Modo Privado';
+      badge.style.background = 'var(--red-bg)';
+      badge.style.color = 'var(--red)';
+      btnPers.style.background = 'var(--accent)';
+      btnPers.style.color = 'white';
+      btnFam.style.background = 'transparent';
+      btnFam.style.color = 'var(--faint)';
+    }
   } else {
+    toggleGrp.style.display = 'none';
     badge.style.display = 'none';
     codeDisp.style.display = 'none';
     btnCreate.style.display = 'block';
@@ -1928,10 +1962,24 @@ function updateFamilyUI() {
   }
 }
 
+function toggleFamilyView(mode) {
+  if (mode === 'family') {
+    currentFamilyId = knownFamilyId;
+    toast('Cambiando a cuenta familiar...');
+  } else {
+    currentFamilyId = null;
+    toast('Cambiando a cuenta privada...');
+  }
+  save();
+  updateFamilyUI();
+  loadFromCloud();
+}
+
 async function generateFamilyCode() {
   if (!currentUser) return;
   const code = Math.random().toString(36).substring(2, 8).toUpperCase();
   currentFamilyId = code;
+  knownFamilyId = code;
   save(); // guarda currentFamilyId
   toast('👨‍👩‍👧‍👦 Familia creada! Comparte el código: ' + code);
   updateFamilyUI();
@@ -1944,6 +1992,7 @@ async function joinFamily() {
   const code = prompt("Introduce el código de familia (letras/números):");
   if (!code || code.trim().length < 3) return;
   currentFamilyId = code.trim().toUpperCase();
+  knownFamilyId = currentFamilyId;
   save();
   toast('👨‍👩‍👧‍👦 Te has unido a la cuenta compartida!');
   updateFamilyUI();
@@ -1951,10 +2000,11 @@ async function joinFamily() {
 }
 
 function leaveFamily() {
-  if (!confirm("¿Seguro que quieres salir de la cuenta compartida y volver a tu cuenta personal?")) return;
+  if (!confirm("¿Seguro que quieres DESVINCULARTE completamente de esta familia?")) return;
   currentFamilyId = null;
+  knownFamilyId = null;
   save();
-  toast('Volviendo a cuenta personal...');
+  toast('Familia desvinculada. Volviendo a cuenta privada...');
   updateFamilyUI();
   loadFromCloud();
 }
