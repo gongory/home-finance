@@ -1395,7 +1395,14 @@
           <span class="help-item-ico">💾</span>
           <div class="help-item-text">
             <div class="help-item-title">¿Dónde se guardan los datos?</div>
-            <div class="help-item-desc">Todos los datos se guardan localmente en tu dispositivo (localStorage del navegador). No se envía nada a internet. Si borras los datos del navegador se perderán.</div>
+            <div class="help-item-desc">Tus datos se guardan en el móvil. Si inicias sesión, se sincronizan en la nube.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">👨‍👩‍👧‍👦</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Compartir cuenta con la pareja</div>
+            <div class="help-item-desc">Inicia sesión en la nube, entra a los ajustes y genera un <strong>Código de Familia</strong>. Pásale ese código a tu pareja para que lo introduzca en su móvil usando el botón "Unirse a familia".</div>
           </div>
         </div>
       </div>
@@ -1412,13 +1419,31 @@
       <div class="app-version-card">
         <span class="app-ver-logo">🏠</span>
         <div class="app-ver-name">Home Finance</div>
-        <div class="app-ver-badge">v1.01</div>
+        <div class="app-ver-badge">v1.05</div>
         <div class="app-ver-date">Julio 2026 · Desarrollado para uso familiar</div>
       </div>
 
       <!-- Changelog -->
       <div class="changelog-title">
         <i class="fa-solid fa-clock-rotate-left"></i> Historial de cambios
+      </div>
+
+      <!-- v1.05 -->
+      <div class="cl-entry">
+        <div class="cl-version">Versión 1.05</div>
+        <div class="cl-date">Julio 2026 — Familias Compartidas</div>
+        <div class="cl-change">
+          <span class="cl-change-ico">👨‍👩‍👧‍👦</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Sincronización Familiar:</strong> Comparte y únete a familias usando un código secreto.</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">✏️</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Renombrar cuentas familiares y sincronizarlas en todos los dispositivos.</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">📱</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Soporte completo mejorado (PWA) para Android e iOS.</span>
+        </div>
       </div>
 
       <!-- v1.01 -->
@@ -1482,8 +1507,8 @@
       </div>
 
       <div class="info-footer">
-        🏠 Home Finance · v1.01<br>
-        Datos guardados en tu dispositivo · Sin conexión requerida
+        🏠 Home Finance · v1.05<br>
+        Datos guardados en tu dispositivo y en la nube
       </div>
 
     </div>
@@ -1560,6 +1585,24 @@
           </div>
         </div>
 
+        <div class="family-section" style="margin: 15px 0; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--r);">
+          <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between;">
+            <span>👨‍👩‍👧‍👦 Compartir Cuenta</span>
+            <span id="family-status-badge" style="font-size: 10px; background: var(--green-bg); color: var(--green); padding: 2px 6px; border-radius: 4px; display: none;">Conectado</span>
+          </div>
+          <div id="family-code-display" style="font-size: 16px; font-weight: 800; letter-spacing: 2px; color: var(--accent2); text-align: center; margin: 10px 0; display: none;"></div>
+          
+          <button class="btn-save" onclick="generateFamilyCode()" id="btn-create-family" style="background: rgba(139,92,246,.15); color: var(--accent2); box-shadow: none; font-size: 13px; padding: 10px;">
+            Generar Código
+          </button>
+          <button class="btn-save" onclick="joinFamily()" id="btn-join-family" style="background: rgba(16,185,129,.15); color: var(--green); box-shadow: none; font-size: 13px; padding: 10px; margin-top: 6px;">
+            Unirse con Código
+          </button>
+          <button class="btn-delete" onclick="leaveFamily()" id="btn-leave-family" style="display: none; padding: 10px; font-size: 13px; margin-top: 6px;">
+            Salir de la Cuenta Compartida
+          </button>
+        </div>
+
         <button class="btn-save" onclick="forcSync()" style="margin-bottom:10px;">
           <i class="fa-solid fa-rotate" style="margin-right:7px;"></i>Sincronizar ahora
         </button>
@@ -1618,6 +1661,7 @@ let transactions      = [];
 let limits            = {};          // { "2026-07": { alimentacion:500, ... } }
 let scheduledPayments = [];          // { id, desc, amount, category, date, paid }
 let homeName          = 'Home Finance 🏠';
+let currentFamilyId   = null;
 let isDarkMode        = true;
 let txType            = 'expense';
 let selCat            = 'alimentacion';
@@ -1641,6 +1685,7 @@ function load() {
     limits            = JSON.parse(localStorage.getItem('hf2_lim')   || '{}');
     scheduledPayments = JSON.parse(localStorage.getItem('hf2_sched') || '[]');
     homeName          = localStorage.getItem('hf2_name') || 'Home Finance 🏠';
+    currentFamilyId   = localStorage.getItem('hf2_family') || null;
     const savedTheme  = localStorage.getItem('hf2_theme');
     isDarkMode        = savedTheme === null ? true : savedTheme === 'dark';
   } catch(e) {}
@@ -1650,6 +1695,8 @@ function save() {
   localStorage.setItem('hf2_lim',   JSON.stringify(limits));
   localStorage.setItem('hf2_sched', JSON.stringify(scheduledPayments));
   localStorage.setItem('hf2_name',  homeName);
+  if (currentFamilyId) localStorage.setItem('hf2_family', currentFamilyId);
+  else localStorage.removeItem('hf2_family');
   localStorage.setItem('hf2_theme', isDarkMode ? 'dark' : 'light');
   // Also sync to cloud if logged in
   saveToCloud();
@@ -1797,6 +1844,7 @@ function updateCloudUI(user) {
     } else {
       av.textContent = (user.displayName || 'U')[0].toUpperCase();
     }
+    updateFamilyUI();
   } else {
     out.style.display = 'block';
     inn.style.display = 'none';
@@ -1847,14 +1895,77 @@ async function logoutCloud() {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════
+   FAMILIAS (SHARING)
+═══════════════════════════════════════════════════════════ */
+function getCloudRef() {
+  if (currentFamilyId) return fbDb.collection('families').doc(currentFamilyId);
+  return fbDb.collection('users').doc(currentUser.uid);
+}
+
+function updateFamilyUI() {
+  const badge = document.getElementById('family-status-badge');
+  const codeDisp = document.getElementById('family-code-display');
+  const btnCreate = document.getElementById('btn-create-family');
+  const btnJoin = document.getElementById('btn-join-family');
+  const btnLeave = document.getElementById('btn-leave-family');
+  
+  if (!badge) return;
+
+  if (currentFamilyId) {
+    badge.style.display = 'inline-block';
+    codeDisp.style.display = 'block';
+    codeDisp.textContent = `Código: ${currentFamilyId}`;
+    btnCreate.style.display = 'none';
+    btnJoin.style.display = 'none';
+    btnLeave.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+    codeDisp.style.display = 'none';
+    btnCreate.style.display = 'block';
+    btnJoin.style.display = 'block';
+    btnLeave.style.display = 'none';
+  }
+}
+
+async function generateFamilyCode() {
+  if (!currentUser) return;
+  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+  currentFamilyId = code;
+  save(); // guarda currentFamilyId
+  toast('👨‍👩‍👧‍👦 Familia creada! Comparte el código: ' + code);
+  updateFamilyUI();
+  await saveToCloud();
+  loadFromCloud();
+}
+
+async function joinFamily() {
+  if (!currentUser) return;
+  const code = prompt("Introduce el código de familia (letras/números):");
+  if (!code || code.trim().length < 3) return;
+  currentFamilyId = code.trim().toUpperCase();
+  save();
+  toast('👨‍👩‍👧‍👦 Te has unido a la cuenta compartida!');
+  updateFamilyUI();
+  loadFromCloud();
+}
+
+function leaveFamily() {
+  if (!confirm("¿Seguro que quieres salir de la cuenta compartida y volver a tu cuenta personal?")) return;
+  currentFamilyId = null;
+  save();
+  toast('Volviendo a cuenta personal...');
+  updateFamilyUI();
+  loadFromCloud();
+}
+
 async function saveToCloud() {
   if (!FIREBASE_READY || !currentUser || !fbDb) return;
   cloudSyncing = true;
   setSyncDot('syncing');
   setCloudStatus('🔄', 'Sincronizando...', 'Guardando en la nube');
   try {
-    const uid = currentUser.uid;
-    const ref = fbDb.collection('users').doc(uid);
+    const ref = getCloudRef();
     await ref.set({
       transactions,
       scheduledPayments,
@@ -1877,8 +1988,7 @@ async function loadFromCloud() {
   if (!FIREBASE_READY || !currentUser || !fbDb) return;
   setSyncDot('syncing');
   try {
-    const uid = currentUser.uid;
-    const ref = fbDb.collection('users').doc(uid);
+    const ref = getCloudRef();
     const doc = await ref.get();
 
     if (doc.exists) {
@@ -1886,7 +1996,7 @@ async function loadFromCloud() {
       transactions      = d.transactions      || [];
       scheduledPayments = d.scheduledPayments || [];
       limits            = d.limits            || {};
-      homeName          = d.homeName          || 'Home Finance 🏠';
+      homeName          = d.homeName          || (currentFamilyId ? 'Familia Compartida' : 'Home Finance 🏠');
       // Also update localStorage cache
       localStorage.setItem('hf2_tx',    JSON.stringify(transactions));
       localStorage.setItem('hf2_lim',   JSON.stringify(limits));
@@ -1894,6 +2004,7 @@ async function loadFromCloud() {
       localStorage.setItem('hf2_name',  homeName);
     } else {
       // First login — migrate local data to cloud
+      homeName = currentFamilyId ? 'Familia Compartida' : homeName;
       await saveToCloud();
     }
 
