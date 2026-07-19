@@ -272,6 +272,29 @@
     .empty h4   { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
     .empty p    { font-size: 12px; line-height: 1.5; }
 
+    /* ─── STATS VIEW ─────────────────────────────────── */
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .stat-month {
+      font-size: 15px; font-weight: 800;
+      margin-bottom: 10px; text-transform: capitalize; letter-spacing: -.2px;
+    }
+    .stat-row {
+      display: flex; justify-content: space-between;
+      font-size: 13px; font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .stat-row.res {
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px dashed var(--border2);
+      font-size: 15px; font-weight: 800;
+    }
+
     /* ─── BUDGET VIEW ────────────────────────────────── */
     .budget-summary {
       display: grid; grid-template-columns: 1fr 1fr 1fr;
@@ -998,6 +1021,7 @@
     <button class="tab active" id="tab-home"     onclick="goTab('home',     this)"><i class="fa-solid fa-list"></i>Movimientos</button>
     <button class="tab"        id="tab-budget"   onclick="goTab('budget',   this)"><i class="fa-solid fa-chart-pie"></i>Presupuesto</button>
     <button class="tab"        id="tab-calendar" onclick="goTab('calendar', this)"><i class="fa-solid fa-calendar-days"></i>Calendario</button>
+    <button class="tab"        id="tab-stats"    onclick="goTab('stats',    this)"><i class="fa-solid fa-chart-line"></i>Estadística</button>
   </div>
 
   <!-- ══ MAIN ════════════════════════════════════════════ -->
@@ -1083,6 +1107,14 @@
           <span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block;"></span>Pago programado
         </span>
       </div>
+    </div>
+
+    <!-- VIEW: ESTADÍSTICA -->
+    <div class="view" id="view-stats">
+      <div class="sec-header">
+        <span class="sec-title">Resultados por Mes</span>
+      </div>
+      <div id="stats-list"></div>
     </div>
 
   </main>
@@ -1704,22 +1736,7 @@ let currentUser = null;
 let cloudSyncing = false;
 let snapshotUnsub = null;
 
-function clearLocalData() {
-  transactions      = [];
-  limits            = {};
-  scheduledPayments = [];
-  homeName          = 'Home Finance 🏠';
-  localStorage.removeItem('hf2_tx');
-  localStorage.removeItem('hf2_lim');
-  localStorage.removeItem('hf2_sched');
-  localStorage.removeItem('hf2_name');
-  const hdrName = document.getElementById('hdr-name');
-  if (hdrName) hdrName.textContent = homeName;
-  renderHome();
-}
-
 function initFirebase() {
-
   if (!FIREBASE_READY) {
     setSyncDot('offline');
     return;
@@ -1734,6 +1751,7 @@ function initFirebase() {
     fbDb   = firebase.firestore();
 
     fbAuth.onAuthStateChanged(user => {
+      const wasLoggedIn = (currentUser !== null);
       currentUser = user;
       if (user) {
         updateCloudUI(user);
@@ -1743,7 +1761,30 @@ function initFirebase() {
         updateCloudUI(null);
         setSyncDot('offline');
         if (snapshotUnsub) { snapshotUnsub(); snapshotUnsub = null; }
-        clearLocalData();
+        
+        if (wasLoggedIn) {
+          // Limpiar datos locales al cerrar sesión activamente
+          transactions      = [];
+          scheduledPayments = [];
+          limits            = {};
+          homeName          = 'Home Finance 🏠';
+          
+          localStorage.removeItem('hf2_tx');
+          localStorage.removeItem('hf2_lim');
+          localStorage.removeItem('hf2_sched');
+          localStorage.removeItem('hf2_name');
+          
+          const hdrName = document.getElementById('hdr-name');
+          if (hdrName) hdrName.textContent = homeName;
+          
+          renderHome();
+          const viewBudget = document.getElementById('view-budget');
+          if (viewBudget && viewBudget.classList.contains('active')) renderBudget();
+          const viewCalendar = document.getElementById('view-calendar');
+          if (viewCalendar && viewCalendar.classList.contains('active')) renderCalendar();
+          const viewStats = document.getElementById('view-stats');
+          if (viewStats && viewStats.classList.contains('active')) renderStats();
+        }
       }
     });
   } catch(e) {
@@ -1981,6 +2022,7 @@ function goTab(id, btn) {
   document.getElementById('view-'+id).classList.add('active');
   if (id==='budget')   renderBudget();
   if (id==='calendar') renderCalendar();
+  if (id==='stats')    renderStats();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2228,6 +2270,59 @@ function selectCalDay(dateStr) {
   calSelDay = dateStr;
   renderCalendar();
   openDayPanel(dateStr);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VIEW: ESTADÍSTICA
+═══════════════════════════════════════════════════════════ */
+function renderStats() {
+  const list = document.getElementById('stats-list');
+  if (!transactions.length) {
+    list.innerHTML = `
+      <div class="empty">
+        <span class="ico">📊</span>
+        <h4>Sin datos</h4>
+        <p>Añade movimientos para ver tus estadísticas mensuales.</p>
+      </div>`;
+    return;
+  }
+
+  const monthsData = {};
+  transactions.forEach(t => {
+    const mk = t.date.substring(0, 7);
+    if (!monthsData[mk]) monthsData[mk] = { inc: 0, exp: 0 };
+    if (t.type === 'income') monthsData[mk].inc += t.amount;
+    else monthsData[mk].exp += t.amount;
+  });
+
+  const sortedKeys = Object.keys(monthsData).sort((a,b) => b.localeCompare(a));
+  
+  list.innerHTML = sortedKeys.map(k => {
+    const [y, m] = k.split('-');
+    const mName = MESES[parseInt(m, 10) - 1] + ' ' + y;
+    const d = monthsData[k];
+    const res = d.inc - d.exp;
+    const resCls = res >= 0 ? 'green' : 'red';
+    const resSign = res > 0 ? '+' : (res < 0 ? '-' : '');
+
+    return `
+      <div class="stat-card">
+        <div class="stat-month">${mName}</div>
+        <div class="stat-row">
+          <span style="color:var(--muted)">Ingresos</span>
+          <span class="green">€ ${fmt(d.inc)}</span>
+        </div>
+        <div class="stat-row">
+          <span style="color:var(--muted)">Gastos</span>
+          <span class="red">€ ${fmt(d.exp)}</span>
+        </div>
+        <div class="stat-row res">
+          <span>Resultado</span>
+          <span class="${resCls}">${resSign}€ ${fmt(Math.abs(res))}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 /* ═══════════════════════════════════════════════════════════
