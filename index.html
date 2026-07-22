@@ -1698,7 +1698,7 @@ function load() {
     isDarkMode        = savedTheme === null ? true : savedTheme === 'dark';
   } catch(e) {}
 }
-function save() {
+function saveLocal() {
   localStorage.setItem('hf2_tx',    JSON.stringify(transactions));
   localStorage.setItem('hf2_lim',   JSON.stringify(limits));
   localStorage.setItem('hf2_sched', JSON.stringify(scheduledPayments));
@@ -1708,7 +1708,10 @@ function save() {
   if (knownFamilyId) localStorage.setItem('hf2_known_family', knownFamilyId);
   else localStorage.removeItem('hf2_known_family');
   localStorage.setItem('hf2_theme', isDarkMode ? 'dark' : 'light');
-  // Also sync to cloud if logged in
+}
+
+function save() {
+  saveLocal();
   saveToCloud();
 }
 
@@ -1801,20 +1804,17 @@ function initFirebase() {
           scheduledPayments = [];
           limits            = {};
           homeName          = 'Home Finance 🏠';
+          currentFamilyId   = null;
+          knownFamilyId     = null;
           
-          localStorage.removeItem('hf2_tx');
-          localStorage.removeItem('hf2_lim');
-          localStorage.removeItem('hf2_sched');
-          localStorage.removeItem('hf2_name');
+          saveLocal();
           
           const hdrName = document.getElementById('hdr-name');
           if (hdrName) hdrName.textContent = homeName;
           
           renderHome();
-          const viewBudget = document.getElementById('view-budget');
-          if (viewBudget && viewBudget.classList.contains('active')) renderBudget();
-          const viewCalendar = document.getElementById('view-calendar');
-          if (viewCalendar && viewCalendar.classList.contains('active')) renderCalendar();
+          if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
+          if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
         }
       }
     });
@@ -1962,7 +1962,10 @@ function updateFamilyUI() {
   }
 }
 
-function toggleFamilyView(mode) {
+async function toggleFamilyView(mode) {
+  if (mode === 'family' && currentFamilyId === knownFamilyId) return;
+  if (mode === 'personal' && currentFamilyId === null) return;
+
   if (mode === 'family') {
     currentFamilyId = knownFamilyId;
     toast('Cambiando a cuenta familiar...');
@@ -1970,9 +1973,21 @@ function toggleFamilyView(mode) {
     currentFamilyId = null;
     toast('Cambiando a cuenta privada...');
   }
-  save();
+  
+  transactions = [];
+  scheduledPayments = [];
+  limits = {};
+  homeName = currentFamilyId ? 'Familia Compartida' : 'Home Finance 🏠';
+  
+  saveLocal();
   updateFamilyUI();
-  loadFromCloud();
+  
+  document.getElementById('hdr-name').textContent = homeName;
+  renderHome();
+  if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
+  if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
+  
+  await loadFromCloud();
 }
 
 async function generateFamilyCode() {
@@ -1980,9 +1995,21 @@ async function generateFamilyCode() {
   const code = Math.random().toString(36).substring(2, 8).toUpperCase();
   currentFamilyId = code;
   knownFamilyId = code;
-  save(); // guarda currentFamilyId
-  toast('👨‍👩‍👧‍👦 Familia creada! Comparte el código: ' + code);
+  
+  transactions = [];
+  scheduledPayments = [];
+  limits = {};
+  homeName = 'Familia Compartida';
+  
+  saveLocal();
   updateFamilyUI();
+  
+  document.getElementById('hdr-name').textContent = homeName;
+  renderHome();
+  if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
+  if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
+  
+  toast('👨‍👩‍👧‍👦 Familia creada! Comparte el código: ' + code);
   await saveToCloud();
   loadFromCloud();
 }
@@ -1993,20 +2020,44 @@ async function joinFamily() {
   if (!code || code.trim().length < 3) return;
   currentFamilyId = code.trim().toUpperCase();
   knownFamilyId = currentFamilyId;
-  save();
-  toast('👨‍👩‍👧‍👦 Te has unido a la cuenta compartida!');
+  
+  transactions = [];
+  scheduledPayments = [];
+  limits = {};
+  homeName = 'Familia Compartida';
+  
+  saveLocal();
   updateFamilyUI();
-  loadFromCloud();
+  
+  document.getElementById('hdr-name').textContent = homeName;
+  renderHome();
+  if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
+  if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
+  
+  toast('👨‍👩‍👧‍👦 Te has unido a la cuenta compartida!');
+  await loadFromCloud();
 }
 
-function leaveFamily() {
+async function leaveFamily() {
   if (!confirm("¿Seguro que quieres DESVINCULARTE completamente de esta familia?")) return;
   currentFamilyId = null;
   knownFamilyId = null;
-  save();
-  toast('Familia desvinculada. Volviendo a cuenta privada...');
+  
+  transactions = [];
+  scheduledPayments = [];
+  limits = {};
+  homeName = 'Home Finance 🏠';
+  
+  saveLocal();
   updateFamilyUI();
-  loadFromCloud();
+  
+  document.getElementById('hdr-name').textContent = homeName;
+  renderHome();
+  if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
+  if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
+  
+  toast('Familia desvinculada. Volviendo a cuenta privada...');
+  await loadFromCloud();
 }
 
 async function saveToCloud() {
@@ -2047,22 +2098,28 @@ async function loadFromCloud() {
       scheduledPayments = d.scheduledPayments || [];
       limits            = d.limits            || {};
       homeName          = d.homeName          || (currentFamilyId ? 'Familia Compartida' : 'Home Finance 🏠');
-      // Also update localStorage cache
-      localStorage.setItem('hf2_tx',    JSON.stringify(transactions));
-      localStorage.setItem('hf2_lim',   JSON.stringify(limits));
-      localStorage.setItem('hf2_sched', JSON.stringify(scheduledPayments));
-      localStorage.setItem('hf2_name',  homeName);
+      saveLocal();
     } else {
-      // First login — migrate local data to cloud
-      homeName = currentFamilyId ? 'Familia Compartida' : homeName;
-      await saveToCloud();
+      if (!currentFamilyId && (transactions.length > 0 || scheduledPayments.length > 0)) {
+        // First login — migrate offline local data to private cloud
+        homeName = currentFamilyId ? 'Familia Compartida' : homeName;
+        await saveToCloud();
+      } else {
+        // Initialize empty for new accounts so we don't carry over data
+        transactions = [];
+        scheduledPayments = [];
+        limits = {};
+        homeName = currentFamilyId ? 'Familia Compartida' : 'Home Finance 🏠';
+        await saveToCloud();
+      }
     }
 
     setSyncDot('synced');
     setCloudStatus('🟢', 'Sincronizado', 'Datos cargados desde la nube');
     document.getElementById('hdr-name').textContent = homeName;
     renderHome();
-    renderOverdueAlerts();
+    if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
+    if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
 
     // Real-time listener
     if (snapshotUnsub) snapshotUnsub();
@@ -2073,12 +2130,11 @@ async function loadFromCloud() {
       scheduledPayments = d.scheduledPayments || scheduledPayments;
       limits            = d.limits            || limits;
       homeName          = d.homeName          || homeName;
-      localStorage.setItem('hf2_tx',    JSON.stringify(transactions));
-      localStorage.setItem('hf2_lim',   JSON.stringify(limits));
-      localStorage.setItem('hf2_sched', JSON.stringify(scheduledPayments));
-      localStorage.setItem('hf2_name',  homeName);
+      saveLocal();
       document.getElementById('hdr-name').textContent = homeName;
       renderHome();
+      if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
+      if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
       setSyncDot('synced');
     });
 
