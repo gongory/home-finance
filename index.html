@@ -2975,13 +2975,19 @@ function addToDeviceCalendar() {
   const icsEnd = formatICSDate(endDate);
   
   const title = `Pago: ${s.desc}`;
-  const details = `Importe a pagar: € ${fmt(s.amount)}\\nCategoría: ${getCat(s.category).label}`;
+  const details = `Importe a pagar: € ${fmt(s.amount)}\nCategoría: ${getCat(s.category).label}`;
+  
+  const now = new Date();
+  const dtstamp = formatICSDate(now);
+  const uid = s.id + '-' + now.getTime() + '@homefinance.app';
   
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Home Finance//App//ES',
     'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${dtstamp}`,
     `DTSTART:${icsStart}`,
     `DTEND:${icsEnd}`,
     `SUMMARY:${title}`,
@@ -3049,10 +3055,16 @@ function exportAllToDeviceCalendar() {
     const icsEnd = formatICSDate(endDate);
     
     const title = `Pago: ${s.desc}`;
-    const details = `Importe a pagar: € ${fmt(s.amount)}\\nCategoría: ${getCat(s.category).label}`;
+    const details = `Importe a pagar: € ${fmt(s.amount)}\nCategoría: ${getCat(s.category).label}`;
+    
+    const now = new Date();
+    const dtstamp = formatICSDate(now);
+    const uid = s.id + '-' + now.getTime() + '@homefinance.app';
     
     icsContent.push(
       'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTAMP:${dtstamp}`,
       `DTSTART:${icsStart}`,
       `DTEND:${icsEnd}`,
       `SUMMARY:${title}`,
