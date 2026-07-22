@@ -5,21 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Home Finance</title>
   <meta name="description" content="App de economía familiar: controla ingresos, gastos, presupuesto y calendario de pagos" />
-  <meta name="theme-color" content="#0d1117" />
-
-  <!-- Ícono y Manifiesto de la app para móviles -->
-  <link rel="icon" href="icon.png?v=2" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2" />
-  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2" />
-  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png?v=2" />
-  <link rel="manifest" href="manifest.json?v=2" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
-/* ─── TOKENS — DARK (default) ────────────────────── */
+    /* ─── TOKENS — DARK (default) ────────────────────── */
     :root {
       --bg:        #0d1117;
       --surface:   #161b22;
@@ -939,15 +931,12 @@
       font-size: 11px; color: var(--muted); font-family: monospace;
       line-height: 1.7;
     }
-</style>
+  </style>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- FontAwesome icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -1008,7 +997,6 @@
   <div class="tabs">
     <button class="tab active" id="tab-home"     onclick="goTab('home',     this)"><i class="fa-solid fa-list"></i>Movimientos</button>
     <button class="tab"        id="tab-budget"   onclick="goTab('budget',   this)"><i class="fa-solid fa-chart-pie"></i>Presupuesto</button>
-    <button class="tab"        id="tab-stats"    onclick="goTab('stats',    this)"><i class="fa-solid fa-chart-simple"></i>Estadísticas</button>
     <button class="tab"        id="tab-calendar" onclick="goTab('calendar', this)"><i class="fa-solid fa-calendar-days"></i>Calendario</button>
   </div>
 
@@ -1019,14 +1007,6 @@
     <div class="view active" id="view-home">
       <!-- Overdue alerts banner -->
       <div class="alerts-banner" id="alerts-banner" style="display:none;"></div>
-      
-      <div style="display:flex; gap:10px; margin-bottom: 15px;">
-        <input type="search" id="tx-search" class="inp" placeholder="🔍 Buscar movimiento..." oninput="renderHome()" style="flex:1;">
-        <select id="tx-filter" class="inp" onchange="renderHome()" style="width:130px; padding: 12px; background:var(--surface);">
-          <option value="all">Todas</option>
-        </select>
-      </div>
-
       <div class="sec-header">
         <span class="sec-title">Este mes</span>
         <span id="tx-count" style="font-size:11px;color:var(--muted);">0 movimientos</span>
@@ -1059,19 +1039,6 @@
       </div>
 
       <div class="budget-list" id="budget-list"></div>
-    </div>
-
-    <!-- VIEW: ESTADÍSTICAS -->
-    <div class="view" id="view-stats">
-      <div class="sec-header" style="margin-bottom: 15px;">
-        <span class="sec-title">Gastos del mes</span>
-      </div>
-      
-      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:16px; margin-bottom:16px; display:flex; justify-content:center;">
-        <canvas id="statsChart" width="300" height="300" style="max-width:300px; max-height:300px;"></canvas>
-      </div>
-      
-      <div id="stats-list" class="budget-list"></div>
     </div>
 
     <!-- VIEW: CALENDARIO -->
@@ -1280,128 +1247,8 @@
         <div class="cat-grid" id="sched-cat-grid"></div>
       </div>
 
-      <div class="field" style="display: flex; gap: 10px;">
-        <div style="flex: 1;">
-          <label class="label" for="sf-notify-date">Día del aviso</label>
-          <input class="inp" type="date" id="sf-notify-date" />
-        </div>
-        <div style="flex: 1;">
-          <label class="label" for="sf-notify-time">Hora del aviso</label>
-          <input class="inp" type="time" id="sf-notify-time" value="09:00" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label class="label" for="sf-recur">Repetir</label>
-        <select id="sf-recur" class="inp">
-          <option value="none">Nunca</option>
-          <option value="weekly">Semanalmente</option>
-          <option value="monthly">Mensualmente</option>
-          <option value="yearly">Anualmente</option>
-        </select>
-      </div>
-
       <button class="btn-save" onclick="saveScheduled()" style="background:linear-gradient(135deg,#b45309,#f59e0b);box-shadow:0 4px 16px rgba(245,158,11,.35);">
         <i class="fa-solid fa-clock" style="margin-right:7px;"></i>Programar pago
-      </button>
-    </div>
-  </div>
-
-  <!-- ══ MODAL: EDITAR PAGO PROGRAMADO ══════════════════════════════ -->
-  <div class="overlay" id="edit-sched-overlay" onclick="closeOnBg(event,'edit-sched-overlay')">
-    <div class="sheet">
-      <div class="handle"></div>
-      <div class="sheet-title">✏️ Editar pago programado</div>
-      <div class="sheet-subtitle" id="edit-sched-date-label"></div>
-
-      <div class="field">
-        <label class="label" for="esf-amount">Importe (€)</label>
-        <input class="inp big" type="number" inputmode="decimal" id="esf-amount" placeholder="0,00" min="0" step="0.01" />
-      </div>
-
-      <div class="field">
-        <label class="label" for="esf-desc">Descripción</label>
-        <input class="inp" type="text" id="esf-desc" placeholder="Ej: Recibo del gas" maxlength="60" />
-      </div>
-
-      <div class="field">
-        <label class="label" for="esf-date">Fecha de pago</label>
-        <input class="inp" type="date" id="esf-date" />
-      </div>
-
-      <div class="field">
-        <label class="label">Categoría</label>
-        <div class="cat-grid" id="edit-sched-cat-grid"></div>
-      </div>
-
-      <div class="field" style="display: flex; gap: 10px;">
-        <div style="flex: 1;">
-          <label class="label" for="esf-notify-date">Día del aviso</label>
-          <input class="inp" type="date" id="esf-notify-date" />
-        </div>
-        <div style="flex: 1;">
-          <label class="label" for="esf-notify-time">Hora del aviso</label>
-          <input class="inp" type="time" id="esf-notify-time" value="09:00" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label class="label" for="esf-recur">Repetir</label>
-        <select id="esf-recur" class="inp">
-          <option value="none">Nunca</option>
-          <option value="weekly">Semanalmente</option>
-          <option value="monthly">Mensualmente</option>
-          <option value="yearly">Anualmente</option>
-        </select>
-      </div>
-
-      <button class="btn-save" onclick="addToDeviceCalendar()" style="background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 4px 16px rgba(59,130,246,.35); margin-bottom: 10px;">
-        <i class="fa-solid fa-calendar-plus" style="margin-right:7px;"></i>Añadir a mi calendario
-      </button>
-
-      <button class="btn-save" onclick="updateScheduled()" style="background:linear-gradient(135deg,#b45309,#f59e0b);box-shadow:0 4px 16px rgba(245,158,11,.35); margin-bottom: 10px;">
-        <i class="fa-solid fa-check" style="margin-right:7px;"></i>Guardar cambios
-      </button>
-
-      <button class="btn-delete" onclick="deleteSched(editSchedId)">
-        <i class="fa-solid fa-trash" style="margin-right:7px;"></i>Eliminar pago
-      </button>
-    </div>
-  </div>
-
-  <!-- ══ MODAL: GESTIONAR CATEGORÍAS ══════════════════════════ -->
-  <div class="overlay" id="cats-overlay" onclick="closeOnBg(event,'cats-overlay')">
-    <div class="sheet">
-      <div class="handle"></div>
-      <div class="sheet-title">🎨 Categorías</div>
-      
-      <div id="cats-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;"></div>
-      
-      <div class="sec-header" style="margin-top:20px;"><span class="sec-title">Nueva categoría</span></div>
-      <div class="field" style="display:flex; gap:10px;">
-        <div style="flex:0 0 60px;">
-          <label class="label" for="nc-emoji">Icono</label>
-          <input class="inp" type="text" id="nc-emoji" placeholder="🛒" maxlength="2" style="text-align:center; font-size:18px;">
-        </div>
-        <div style="flex:1;">
-          <label class="label" for="nc-name">Nombre</label>
-          <input class="inp" type="text" id="nc-name" placeholder="Ej: Mascotas" maxlength="20">
-        </div>
-        <div style="flex:0 0 60px;">
-          <label class="label" for="nc-color">Color</label>
-          <input type="color" id="nc-color" value="#7c3aed" style="width:100%; height:42px; border:none; border-radius:8px; cursor:pointer; padding:0;">
-        </div>
-      </div>
-      <div class="field">
-        <label class="label">Tipo</label>
-        <select id="nc-type" class="inp">
-          <option value="expense">Gasto</option>
-          <option value="income">Ingreso</option>
-        </select>
-      </div>
-      
-      <button class="btn-save" onclick="saveNewCategory()">
-        <i class="fa-solid fa-plus" style="margin-right:7px;"></i>Añadir categoría
       </button>
     </div>
   </div>
@@ -1471,14 +1318,7 @@
       <div class="help-section">
         <div class="help-section-title">
           <span class="hi" style="background:rgba(6,182,212,.15)">📅</span>
-          Calendario y Estadísticas
-        </div>
-        <div class="help-item">
-          <span class="help-item-ico">📊</span>
-          <div class="help-item-text">
-            <div class="help-item-title">Estadísticas</div>
-            <div class="help-item-desc">En la pestaña <span class="help-badge">Estadísticas</span> verás un gráfico interactivo con tus gastos del mes actualizados en tiempo real.</div>
-          </div>
+          Calendario
         </div>
         <div class="help-item">
           <span class="help-item-ico">🔴🟢🟡</span>
@@ -1489,13 +1329,6 @@
               <span style="color:#f43f5e;font-weight:700;">● Rojo</span> = gasto &nbsp;
               <span style="color:#f59e0b;font-weight:700;">● Amarillo</span> = pago programado
             </div>
-          </div>
-        </div>
-        <div class="help-item">
-          <span class="help-item-ico">🔁</span>
-          <div class="help-item-text">
-            <div class="help-item-title">Pagos Recurrentes</div>
-            <div class="help-item-desc">Al programar un pago, elige "Repetir" para que, al pagarlo, se vuelva a crear automáticamente el mes o semana siguiente.</div>
           </div>
         </div>
         <div class="help-item">
@@ -1554,14 +1387,7 @@
           <span class="help-item-ico">💾</span>
           <div class="help-item-text">
             <div class="help-item-title">¿Dónde se guardan los datos?</div>
-            <div class="help-item-desc">Tus datos se guardan en el móvil. Si inicias sesión, se sincronizan en la nube.</div>
-          </div>
-        </div>
-        <div class="help-item">
-          <span class="help-item-ico">👨‍👩‍👧‍👦</span>
-          <div class="help-item-text">
-            <div class="help-item-title">Compartir cuenta con la pareja</div>
-            <div class="help-item-desc">Inicia sesión en la nube, entra a los ajustes y genera un <strong>Código de Familia</strong>. Pásale ese código a tu pareja para que lo introduzca en su móvil usando el botón "Unirse a familia".</div>
+            <div class="help-item-desc">Todos los datos se guardan localmente en tu dispositivo (localStorage del navegador). No se envía nada a internet. Si borras los datos del navegador se perderán.</div>
           </div>
         </div>
       </div>
@@ -1578,57 +1404,13 @@
       <div class="app-version-card">
         <span class="app-ver-logo">🏠</span>
         <div class="app-ver-name">Home Finance</div>
-        <div class="app-ver-badge">v1.05</div>
+        <div class="app-ver-badge">v1.01</div>
         <div class="app-ver-date">Julio 2026 · Desarrollado para uso familiar</div>
       </div>
 
       <!-- Changelog -->
       <div class="changelog-title">
         <i class="fa-solid fa-clock-rotate-left"></i> Historial de cambios
-      </div>
-
-      <!-- v1.06 -->
-      <div class="cl-entry">
-        <div class="cl-version">Versión 1.06</div>
-        <div class="cl-date">Julio 2026 — Mega Actualización</div>
-        <div class="cl-change">
-          <span class="cl-change-ico">📊</span>
-          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Gráficos y Estadísticas:</strong> Visualiza tus gastos del mes en un gráfico circular interactivo.</span>
-        </div>
-        <div class="cl-change">
-          <span class="cl-change-ico">🔁</span>
-          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Pagos Recurrentes:</strong> Configura pagos mensuales, semanales o anuales automáticos.</span>
-        </div>
-        <div class="cl-change">
-          <span class="cl-change-ico">🔍</span>
-          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Buscador y Filtros:</strong> Encuentra fácilmente cualquier movimiento por texto o categoría.</span>
-        </div>
-        <div class="cl-change">
-          <span class="cl-change-ico">📄</span>
-          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Exportar a Excel:</strong> Descarga todos tus datos en formato CSV desde el menú de usuario.</span>
-        </div>
-        <div class="cl-change">
-          <span class="cl-change-ico">🎨</span>
-          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Categorías Personalizadas:</strong> Crea, edita y borra tus propias categorías con emojis y colores.</span>
-        </div>
-      </div>
-
-      <!-- v1.05 -->
-      <div class="cl-entry">
-        <div class="cl-version">Versión 1.05</div>
-        <div class="cl-date">Julio 2026 — Familias Compartidas</div>
-        <div class="cl-change">
-          <span class="cl-change-ico">👨‍👩‍👧‍👦</span>
-          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Sincronización Familiar:</strong> Comparte y únete a familias usando un código secreto.</span>
-        </div>
-        <div class="cl-change">
-          <span class="cl-change-ico">✏️</span>
-          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Renombrar cuentas familiares y sincronizarlas en todos los dispositivos.</span>
-        </div>
-        <div class="cl-change">
-          <span class="cl-change-ico">📱</span>
-          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span>Soporte completo mejorado (PWA) para Android e iOS.</span>
-        </div>
       </div>
 
       <!-- v1.01 -->
@@ -1692,8 +1474,8 @@
       </div>
 
       <div class="info-footer">
-        🏠 Home Finance · v1.05<br>
-        Datos guardados en tu dispositivo y en la nube
+        🏠 Home Finance · v1.01<br>
+        Datos guardados en tu dispositivo · Sin conexión requerida
       </div>
 
     </div>
@@ -1770,38 +1552,6 @@
           </div>
         </div>
 
-        <div class="family-section" style="margin: 15px 0; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--r);">
-          <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between;">
-            <span>👨‍👩‍👧‍👦 Compartir Cuenta</span>
-            <span id="family-status-badge" style="font-size: 10px; background: var(--green-bg); color: var(--green); padding: 2px 6px; border-radius: 4px; display: none;">Conectado</span>
-          </div>
-          
-          <div id="family-toggle-group" style="display: none; background: var(--surface); border-radius: 8px; padding: 4px; margin-bottom: 12px; gap: 4px;">
-             <button id="btn-view-personal" onclick="toggleFamilyView('personal')" style="flex:1; padding: 8px; border-radius: 6px; background: var(--accent); color: white; border: none; font-size: 12px; font-weight: 600;">Privada</button>
-             <button id="btn-view-family" onclick="toggleFamilyView('family')" style="flex:1; padding: 8px; border-radius: 6px; background: transparent; color: var(--faint); border: none; font-size: 12px; font-weight: 600;">Familia</button>
-          </div>
-
-          <div id="family-code-display" style="font-size: 16px; font-weight: 800; letter-spacing: 2px; color: var(--accent2); text-align: center; margin: 10px 0; display: none;"></div>
-          
-          <button class="btn-save" onclick="generateFamilyCode()" id="btn-create-family" style="background: rgba(139,92,246,.15); color: var(--accent2); box-shadow: none; font-size: 13px; padding: 10px;">
-            Generar Código
-          </button>
-          <button class="btn-save" onclick="joinFamily()" id="btn-join-family" style="background: rgba(16,185,129,.15); color: var(--green); box-shadow: none; font-size: 13px; padding: 10px; margin-top: 6px;">
-            Unirse con Código
-          </button>
-          <button class="btn-delete" onclick="leaveFamily()" id="btn-leave-family" style="display: none; padding: 10px; font-size: 13px; margin-top: 6px;">
-            Desvincular Familia
-          </button>
-        </div>
-
-        <button class="btn-save" onclick="exportToCSV()" style="background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 16px rgba(16,185,129,.35); margin-bottom:10px;">
-          <i class="fa-solid fa-file-excel" style="margin-right:7px;"></i>Exportar movimientos (CSV)
-        </button>
-
-        <button class="btn-save" onclick="exportAllToDeviceCalendar()" style="background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 4px 16px rgba(59,130,246,.35); margin-bottom:10px;">
-          <i class="fa-solid fa-calendar-plus" style="margin-right:7px;"></i>Sincronizar pagos con Calendario
-        </button>
-
         <button class="btn-save" onclick="forcSync()" style="margin-bottom:10px;">
           <i class="fa-solid fa-rotate" style="margin-right:7px;"></i>Sincronizar ahora
         </button>
@@ -1828,7 +1578,7 @@
 /* ═══════════════════════════════════════════════════════════
    DATA
 ═══════════════════════════════════════════════════════════ */
-const DEFAULT_CATS = [
+const CATS = [
   { id:'alimentacion', label:'Alimentación', e:'🛒', c:'#f97316', bg:'rgba(249,115,22,.12)' },
   { id:'hogar',        label:'Hogar',        e:'🏠', c:'#3b82f6', bg:'rgba(59,130,246,.12)'  },
   { id:'transporte',   label:'Transporte',   e:'🚗', c:'#eab308', bg:'rgba(234,179,8,.12)'   },
@@ -1841,19 +1591,8 @@ const DEFAULT_CATS = [
   { id:'otros',        label:'Otros',        e:'💰', c:'#84cc16', bg:'rgba(132,204,22,.12)'  },
 ];
 
-const DEF_EXP_IDS = ['alimentacion','hogar','transporte','salud','ocio','suscripc','ropa','educacion','otros'];
-const DEF_INC_IDS = ['nomina','otros'];
-
-let customCategories = [];
-let CATS = [...DEFAULT_CATS];
-let EXP_IDS = [...DEF_EXP_IDS];
-let INC_IDS = [...DEF_INC_IDS];
-
-function updateCats() {
-  CATS = [...DEFAULT_CATS, ...customCategories];
-  EXP_IDS = [...DEF_EXP_IDS, ...customCategories.filter(c => c.type === 'expense').map(c => c.id)];
-  INC_IDS = [...DEF_INC_IDS, ...customCategories.filter(c => c.type === 'income').map(c => c.id)];
-}
+const EXP_IDS = ['alimentacion','hogar','transporte','salud','ocio','suscripc','ropa','educacion','otros'];
+const INC_IDS = ['nomina','otros'];
 
 const DEF_LIMITS = {
   alimentacion:500, hogar:800, transporte:150,
@@ -1871,8 +1610,6 @@ let transactions      = [];
 let limits            = {};          // { "2026-07": { alimentacion:500, ... } }
 let scheduledPayments = [];          // { id, desc, amount, category, date, paid }
 let homeName          = 'Home Finance 🏠';
-let currentFamilyId   = null;
-let knownFamilyId     = null;
 let isDarkMode        = true;
 let txType            = 'expense';
 let selCat            = 'alimentacion';
@@ -1895,30 +1632,18 @@ function load() {
     transactions      = JSON.parse(localStorage.getItem('hf2_tx')    || '[]');
     limits            = JSON.parse(localStorage.getItem('hf2_lim')   || '{}');
     scheduledPayments = JSON.parse(localStorage.getItem('hf2_sched') || '[]');
-    customCategories  = JSON.parse(localStorage.getItem('hf2_cats')  || '[]');
     homeName          = localStorage.getItem('hf2_name') || 'Home Finance 🏠';
-    currentFamilyId   = localStorage.getItem('hf2_family') || null;
-    knownFamilyId     = localStorage.getItem('hf2_known_family') || currentFamilyId;
     const savedTheme  = localStorage.getItem('hf2_theme');
     isDarkMode        = savedTheme === null ? true : savedTheme === 'dark';
-    updateCats();
   } catch(e) {}
 }
-function saveLocal() {
+function save() {
   localStorage.setItem('hf2_tx',    JSON.stringify(transactions));
   localStorage.setItem('hf2_lim',   JSON.stringify(limits));
   localStorage.setItem('hf2_sched', JSON.stringify(scheduledPayments));
-  localStorage.setItem('hf2_cats',  JSON.stringify(customCategories));
   localStorage.setItem('hf2_name',  homeName);
-  if (currentFamilyId) localStorage.setItem('hf2_family', currentFamilyId);
-  else localStorage.removeItem('hf2_family');
-  if (knownFamilyId) localStorage.setItem('hf2_known_family', knownFamilyId);
-  else localStorage.removeItem('hf2_known_family');
   localStorage.setItem('hf2_theme', isDarkMode ? 'dark' : 'light');
-}
-
-function save() {
-  saveLocal();
+  // Also sync to cloud if logged in
   saveToCloud();
 }
 
@@ -2010,20 +1735,21 @@ function initFirebase() {
           transactions      = [];
           scheduledPayments = [];
           limits            = {};
-          customCategories  = [];
           homeName          = 'Home Finance 🏠';
-          currentFamilyId   = null;
-          knownFamilyId     = null;
           
-          updateCats();
-          saveLocal();
+          localStorage.removeItem('hf2_tx');
+          localStorage.removeItem('hf2_lim');
+          localStorage.removeItem('hf2_sched');
+          localStorage.removeItem('hf2_name');
           
           const hdrName = document.getElementById('hdr-name');
           if (hdrName) hdrName.textContent = homeName;
           
           renderHome();
-          if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
-          if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
+          const viewBudget = document.getElementById('view-budget');
+          if (viewBudget && viewBudget.classList.contains('active')) renderBudget();
+          const viewCalendar = document.getElementById('view-calendar');
+          if (viewCalendar && viewCalendar.classList.contains('active')) renderCalendar();
         }
       }
     });
@@ -2063,7 +1789,6 @@ function updateCloudUI(user) {
     } else {
       av.textContent = (user.displayName || 'U')[0].toUpperCase();
     }
-    updateFamilyUI();
   } else {
     out.style.display = 'block';
     inn.style.display = 'none';
@@ -2114,173 +1839,18 @@ async function logoutCloud() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   FAMILIAS (SHARING)
-═══════════════════════════════════════════════════════════ */
-function getCloudRef() {
-  if (currentFamilyId) return fbDb.collection('families').doc(currentFamilyId);
-  return fbDb.collection('users').doc(currentUser.uid);
-}
-
-function updateFamilyUI() {
-  const badge = document.getElementById('family-status-badge');
-  const codeDisp = document.getElementById('family-code-display');
-  const btnCreate = document.getElementById('btn-create-family');
-  const btnJoin = document.getElementById('btn-join-family');
-  const btnLeave = document.getElementById('btn-leave-family');
-  const toggleGrp = document.getElementById('family-toggle-group');
-  const btnPers = document.getElementById('btn-view-personal');
-  const btnFam = document.getElementById('btn-view-family');
-  
-  if (!badge) return;
-
-  if (knownFamilyId) {
-    toggleGrp.style.display = 'flex';
-    codeDisp.style.display = 'block';
-    codeDisp.textContent = `Código: ${knownFamilyId}`;
-    btnCreate.style.display = 'none';
-    btnJoin.style.display = 'none';
-    btnLeave.style.display = 'block';
-
-    if (currentFamilyId) {
-      badge.style.display = 'inline-block';
-      badge.textContent = 'Modo Familia';
-      badge.style.background = 'var(--green-bg)';
-      badge.style.color = 'var(--green)';
-      btnFam.style.background = 'var(--accent)';
-      btnFam.style.color = 'white';
-      btnPers.style.background = 'transparent';
-      btnPers.style.color = 'var(--faint)';
-    } else {
-      badge.style.display = 'inline-block';
-      badge.textContent = 'Modo Privado';
-      badge.style.background = 'var(--red-bg)';
-      badge.style.color = 'var(--red)';
-      btnPers.style.background = 'var(--accent)';
-      btnPers.style.color = 'white';
-      btnFam.style.background = 'transparent';
-      btnFam.style.color = 'var(--faint)';
-    }
-  } else {
-    toggleGrp.style.display = 'none';
-    badge.style.display = 'none';
-    codeDisp.style.display = 'none';
-    btnCreate.style.display = 'block';
-    btnJoin.style.display = 'block';
-    btnLeave.style.display = 'none';
-  }
-}
-
-async function toggleFamilyView(mode) {
-  if (mode === 'family' && currentFamilyId === knownFamilyId) return;
-  if (mode === 'personal' && currentFamilyId === null) return;
-
-  if (mode === 'family') {
-    currentFamilyId = knownFamilyId;
-    toast('Cambiando a cuenta familiar...');
-  } else {
-    currentFamilyId = null;
-    toast('Cambiando a cuenta privada...');
-  }
-  
-  transactions = [];
-  scheduledPayments = [];
-  limits = {};
-  homeName = currentFamilyId ? 'Familia Compartida' : 'Home Finance 🏠';
-  
-  saveLocal();
-  updateFamilyUI();
-  
-  document.getElementById('hdr-name').textContent = homeName;
-  renderHome();
-  if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
-  if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
-  
-  await loadFromCloud();
-}
-
-async function generateFamilyCode() {
-  if (!currentUser) return;
-  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-  currentFamilyId = code;
-  knownFamilyId = code;
-  
-  transactions = [];
-  scheduledPayments = [];
-  limits = {};
-  homeName = 'Familia Compartida';
-  
-  saveLocal();
-  updateFamilyUI();
-  
-  document.getElementById('hdr-name').textContent = homeName;
-  renderHome();
-  if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
-  if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
-  
-  toast('👨‍👩‍👧‍👦 Familia creada! Comparte el código: ' + code);
-  await saveToCloud();
-  loadFromCloud();
-}
-
-async function joinFamily() {
-  if (!currentUser) return;
-  const code = prompt("Introduce el código de familia (letras/números):");
-  if (!code || code.trim().length < 3) return;
-  currentFamilyId = code.trim().toUpperCase();
-  knownFamilyId = currentFamilyId;
-  
-  transactions = [];
-  scheduledPayments = [];
-  limits = {};
-  homeName = 'Familia Compartida';
-  
-  saveLocal();
-  updateFamilyUI();
-  
-  document.getElementById('hdr-name').textContent = homeName;
-  renderHome();
-  if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
-  if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
-  
-  toast('👨‍👩‍👧‍👦 Te has unido a la cuenta compartida!');
-  await loadFromCloud();
-}
-
-async function leaveFamily() {
-  if (!confirm("¿Seguro que quieres DESVINCULARTE completamente de esta familia?")) return;
-  currentFamilyId = null;
-  knownFamilyId = null;
-  
-  transactions = [];
-  scheduledPayments = [];
-  limits = {};
-  homeName = 'Home Finance 🏠';
-  
-  saveLocal();
-  updateFamilyUI();
-  
-  document.getElementById('hdr-name').textContent = homeName;
-  renderHome();
-  if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
-  if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
-  
-  toast('Familia desvinculada. Volviendo a cuenta privada...');
-  await loadFromCloud();
-}
-
 async function saveToCloud() {
   if (!FIREBASE_READY || !currentUser || !fbDb) return;
   cloudSyncing = true;
   setSyncDot('syncing');
   setCloudStatus('🔄', 'Sincronizando...', 'Guardando en la nube');
   try {
-    const ref = getCloudRef();
+    const uid = currentUser.uid;
+    const ref = fbDb.collection('users').doc(uid);
     await ref.set({
       transactions,
       scheduledPayments,
       limits,
-      customCategories,
       homeName,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
@@ -2299,7 +1869,8 @@ async function loadFromCloud() {
   if (!FIREBASE_READY || !currentUser || !fbDb) return;
   setSyncDot('syncing');
   try {
-    const ref = getCloudRef();
+    const uid = currentUser.uid;
+    const ref = fbDb.collection('users').doc(uid);
     const doc = await ref.get();
 
     if (doc.exists) {
@@ -2307,31 +1878,22 @@ async function loadFromCloud() {
       transactions      = d.transactions      || [];
       scheduledPayments = d.scheduledPayments || [];
       limits            = d.limits            || {};
-      customCategories  = d.customCategories  || [];
-      homeName          = d.homeName          || (currentFamilyId ? 'Familia Compartida' : 'Home Finance 🏠');
-      updateCats();
-      saveLocal();
+      homeName          = d.homeName          || 'Home Finance 🏠';
+      // Also update localStorage cache
+      localStorage.setItem('hf2_tx',    JSON.stringify(transactions));
+      localStorage.setItem('hf2_lim',   JSON.stringify(limits));
+      localStorage.setItem('hf2_sched', JSON.stringify(scheduledPayments));
+      localStorage.setItem('hf2_name',  homeName);
     } else {
-      if (!currentFamilyId && (transactions.length > 0 || scheduledPayments.length > 0)) {
-        // First login — migrate offline local data to private cloud
-        homeName = currentFamilyId ? 'Familia Compartida' : homeName;
-        await saveToCloud();
-      } else {
-        // Initialize empty for new accounts so we don't carry over data
-        transactions = [];
-        scheduledPayments = [];
-        limits = {};
-        homeName = currentFamilyId ? 'Familia Compartida' : 'Home Finance 🏠';
-        await saveToCloud();
-      }
+      // First login — migrate local data to cloud
+      await saveToCloud();
     }
 
     setSyncDot('synced');
     setCloudStatus('🟢', 'Sincronizado', 'Datos cargados desde la nube');
     document.getElementById('hdr-name').textContent = homeName;
     renderHome();
-    if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
-    if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
+    renderOverdueAlerts();
 
     // Real-time listener
     if (snapshotUnsub) snapshotUnsub();
@@ -2341,14 +1903,13 @@ async function loadFromCloud() {
       transactions      = d.transactions      || transactions;
       scheduledPayments = d.scheduledPayments || scheduledPayments;
       limits            = d.limits            || limits;
-      customCategories  = d.customCategories  || customCategories;
       homeName          = d.homeName          || homeName;
-      updateCats();
-      saveLocal();
+      localStorage.setItem('hf2_tx',    JSON.stringify(transactions));
+      localStorage.setItem('hf2_lim',   JSON.stringify(limits));
+      localStorage.setItem('hf2_sched', JSON.stringify(scheduledPayments));
+      localStorage.setItem('hf2_name',  homeName);
       document.getElementById('hdr-name').textContent = homeName;
       renderHome();
-      if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
-      if (document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
       setSyncDot('synced');
     });
 
@@ -2426,7 +1987,6 @@ function goTab(id, btn) {
   btn.classList.add('active');
   document.getElementById('view-'+id).classList.add('active');
   if (id==='budget')   renderBudget();
-  if (id==='stats')    renderStats();
   if (id==='calendar') renderCalendar();
 }
 
@@ -2479,27 +2039,9 @@ function renderHome() {
   updateHeader();
   renderOverdueAlerts();
 
-  let txs  = [...transactions].sort((a,b)=>new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00'));
-
-  const q = (document.getElementById('tx-search')?.value || '').toLowerCase();
-  const f = document.getElementById('tx-filter')?.value || 'all';
-  
-  if (q) {
-    txs = txs.filter(t => t.desc.toLowerCase().includes(q) || getCat(t.category).label.toLowerCase().includes(q));
-  }
-  if (f !== 'all') {
-    txs = txs.filter(t => t.category === f);
-  }
-
+  const txs  = [...transactions].sort((a,b)=>new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00'));
   const list = document.getElementById('tx-list');
   document.getElementById('tx-count').textContent = txs.length + ' movimiento'+(txs.length!==1?'s':'');
-
-  const filterSel = document.getElementById('tx-filter');
-  if (filterSel) {
-     const currVal = filterSel.value;
-     filterSel.innerHTML = '<option value="all">Todas</option>' + CATS.map(c => `<option value="${c.id}">${c.e} ${c.label}</option>`).join('');
-     filterSel.value = currVal || 'all';
-  }
 
   if (!txs.length) {
     list.innerHTML = `
@@ -2570,85 +2112,6 @@ function renderBudget() {
         </div>
       </div>`;
   }).join('');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   VIEW: ESTADÍSTICAS
-═══════════════════════════════════════════════════════════ */
-let statsChartInstance = null;
-
-function renderStats() {
-  const txs = monthTx().filter(t => t.type === 'expense');
-  
-  const totals = {};
-  txs.forEach(t => { totals[t.category] = (totals[t.category] || 0) + t.amount; });
-  
-  const dataList = Object.keys(totals).map(catId => ({
-    catId,
-    cat: getCat(catId),
-    amount: totals[catId]
-  })).sort((a,b) => b.amount - a.amount);
-  
-  const listEl = document.getElementById('stats-list');
-  
-  if (dataList.length === 0) {
-    listEl.innerHTML = '<div class="empty"><h4>Sin gastos este mes</h4></div>';
-    if (statsChartInstance) statsChartInstance.destroy();
-    return;
-  }
-  
-  const totalExp = dataList.reduce((sum, item) => sum + item.amount, 0);
-  
-  listEl.innerHTML = dataList.map(item => {
-    const pct = Math.round((item.amount / totalExp) * 100);
-    return `
-      <div class="bcat">
-        <div class="bcat-top">
-          <div class="bcat-ico" style="background:${item.cat.bg}">${item.cat.e}</div>
-          <div class="bcat-info">
-            <div class="bcat-name">${item.cat.label}</div>
-            <div class="bcat-sub">€ ${fmt(item.amount)}</div>
-          </div>
-          <div class="bcat-pct" style="color:${item.cat.c}">${pct}%</div>
-        </div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:${pct}%;background:${item.cat.c}"></div>
-        </div>
-      </div>
-    `;
-  }).join('');
-  
-  const ctx = document.getElementById('statsChart');
-  if (!ctx) return;
-  
-  if (statsChartInstance) statsChartInstance.destroy();
-  
-  statsChartInstance = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: dataList.map(d => d.cat.label),
-      datasets: [{
-        data: dataList.map(d => d.amount),
-        backgroundColor: dataList.map(d => d.cat.c),
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      cutout: '70%',
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              return ' € ' + fmt(context.raw);
-            }
-          }
-        }
-      }
-    }
-  });
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2821,9 +2284,8 @@ function openDayPanel(dateStr) {
         </div>
         <div class="sched-right">
           <span class="sched-amount">€ ${fmt(s.amount)}</span>
-          <div class="sched-actions" style="margin-top:5px;display:flex;gap:5px;align-items:center;">
-            ${!s.paid ? `<button class="sched-btn pay" onclick="markSchedPaid(${s.id})">✅</button>` : ''}
-            <button class="sched-btn edit" style="background:var(--faint);color:var(--text);padding:6px 10px;border-radius:6px;border:none;font-size:12px;cursor:pointer;" onclick="closeSheet('day-overlay');setTimeout(()=>openEditSchedSheet(${s.id}),120)"><i class="fa-solid fa-pen-to-square"></i></button>
+          <div class="sched-actions">
+            ${!s.paid ? `<button class="sched-btn pay" onclick="markSchedPaid(${s.id})">✅ Pagar</button>` : ''}
             <button class="sched-btn del" onclick="deleteSched(${s.id})">🗑</button>
           </div>
         </div>
@@ -2848,8 +2310,6 @@ function openAddSchedSheet(dateStr) {
   panelDate = dateStr;
   document.getElementById('sf-amount').value = '';
   document.getElementById('sf-desc').value   = '';
-  document.getElementById('sf-notify-date').value = dateStr;
-  document.getElementById('sf-notify-time').value = '09:00';
   const d = new Date(dateStr+'T12:00:00');
   document.getElementById('sched-date-label').textContent =
     `Para el ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
@@ -2873,207 +2333,18 @@ function pickSchedCat(id) { schedSelCat = id; renderSchedCatGrid(); }
 function saveScheduled() {
   const amount = parseFloat(document.getElementById('sf-amount').value);
   const desc   = document.getElementById('sf-desc').value.trim();
-  const notifyDate = document.getElementById('sf-notify-date').value || panelDate;
-  const notifyTime = document.getElementById('sf-notify-time').value || '09:00';
-  const recurrence = document.getElementById('sf-recur').value || 'none';
-  
   if (!amount || amount <= 0) { toast('⚠ Introduce un importe válido', false); return; }
   if (!desc)                  { toast('⚠ Escribe una descripción', false);     return; }
 
   scheduledPayments.push({
     id: Date.now(), desc, amount,
-    category: schedSelCat, date: panelDate, paid: false,
-    notifyDate, notifyTime, recurrence
+    category: schedSelCat, date: panelDate, paid: false
   });
   save();
   closeSheet('sched-overlay');
   renderCalendar();
   renderOverdueAlerts();
   toast('⏰ Pago programado guardado');
-}
-
-let editSchedId = null;
-let editSchedCat = null;
-
-function openEditSchedSheet(id) {
-  const s = scheduledPayments.find(x => x.id === id);
-  if (!s) return;
-  editSchedId = id;
-  
-  document.getElementById('esf-amount').value = s.amount;
-  document.getElementById('esf-desc').value   = s.desc;
-  document.getElementById('esf-date').value   = s.date;
-  document.getElementById('esf-notify-date').value = s.notifyDate || s.date;
-  document.getElementById('esf-notify-time').value = s.notifyTime || '09:00';
-  document.getElementById('esf-recur').value = s.recurrence || 'none';
-  
-  const d = new Date(s.date+'T12:00:00');
-  document.getElementById('edit-sched-date-label').textContent =
-    `Para el ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
-    
-  editSchedCat = s.category;
-  renderEditSchedCatGrid();
-  document.getElementById('edit-sched-overlay').classList.add('open');
-}
-
-function renderEditSchedCatGrid() {
-  const cats = CATS.filter(c => EXP_IDS.includes(c.id));
-  document.getElementById('edit-sched-cat-grid').innerHTML = cats.map(cat => `
-    <button class="cat-btn ${editSchedCat===cat.id?'sel':''}" onclick="pickEditSchedCat('${cat.id}')">
-      <span class="ce">${cat.e}</span>
-      <span class="cl">${cat.label}</span>
-    </button>`).join('');
-}
-
-function pickEditSchedCat(id) { editSchedCat = id; renderEditSchedCatGrid(); }
-
-function updateScheduled() {
-  const amount = parseFloat(document.getElementById('esf-amount').value);
-  const desc   = document.getElementById('esf-desc').value.trim();
-  const date   = document.getElementById('esf-date').value;
-  const notifyDate = document.getElementById('esf-notify-date').value || date;
-  const notifyTime = document.getElementById('esf-notify-time').value || '09:00';
-  const recurrence = document.getElementById('esf-recur').value || 'none';
-  
-  if (!amount || amount <= 0) { toast('⚠ Introduce un importe válido', false); return; }
-  if (!desc)                  { toast('⚠ Escribe una descripción', false);     return; }
-  if (!date)                  { toast('⚠ Selecciona una fecha', false);        return; }
-
-  const idx = scheduledPayments.findIndex(x => x.id === editSchedId);
-  if (idx === -1) return;
-
-  scheduledPayments[idx] = { ...scheduledPayments[idx], desc, amount, category: editSchedCat, date, notifyDate, notifyTime, recurrence };
-  save();
-  closeSheet('edit-sched-overlay');
-  renderCalendar();
-  renderOverdueAlerts();
-  toast('✅ Pago programado actualizado');
-}
-
-function addToDeviceCalendar() {
-  const s = scheduledPayments.find(x => x.id === editSchedId);
-  if (!s) return;
-  
-  const notifyDate = s.notifyDate || s.date;
-  const notifyTime = s.notifyTime || '09:00';
-  
-  const [ny, nm, nd] = notifyDate.split('-');
-  const [nh, nmin] = notifyTime.split(':');
-  
-  const startDate = new Date(ny, nm-1, nd, nh, nmin);
-  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // +1 hour
-  
-  const formatICSDate = (d) => {
-    return d.getFullYear() +
-      String(d.getMonth() + 1).padStart(2, '0') +
-      String(d.getDate()).padStart(2, '0') + 'T' +
-      String(d.getHours()).padStart(2, '0') +
-      String(d.getMinutes()).padStart(2, '0') + '00';
-  };
-  
-  const icsStart = formatICSDate(startDate);
-  const icsEnd = formatICSDate(endDate);
-  
-  const title = `Pago: ${s.desc}`;
-  const details = `Importe a pagar: € ${fmt(s.amount)}\\nCategoría: ${getCat(s.category).label}`;
-  
-  const icsContent = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Home Finance//App//ES',
-    'BEGIN:VEVENT',
-    `DTSTART:${icsStart}`,
-    `DTEND:${icsEnd}`,
-    `SUMMARY:${title}`,
-    `DESCRIPTION:${details}`,
-    'BEGIN:VALARM',
-    'TRIGGER:-PT0M',
-    'ACTION:DISPLAY',
-    'DESCRIPTION:Recordatorio de pago',
-    'END:VALARM',
-    'END:VEVENT',
-    'END:VCALENDAR'
-  ].join('\\r\\n');
-
-  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `pago_${s.id}.ics`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  
-  toast('📅 Evento descargado. Ábrelo para añadirlo.');
-}
-
-function exportAllToDeviceCalendar() {
-  const pending = scheduledPayments.filter(s => !s.paid);
-  if (pending.length === 0) {
-    toast('⚠ No hay pagos programados pendientes');
-    return;
-  }
-  
-  let icsContent = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Home Finance//App//ES'
-  ];
-  
-  const formatICSDate = (d) => {
-    return d.getFullYear() +
-      String(d.getMonth() + 1).padStart(2, '0') +
-      String(d.getDate()).padStart(2, '0') + 'T' +
-      String(d.getHours()).padStart(2, '0') +
-      String(d.getMinutes()).padStart(2, '0') + '00';
-  };
-
-  pending.forEach(s => {
-    const notifyDate = s.notifyDate || s.date;
-    const notifyTime = s.notifyTime || '09:00';
-    
-    const [ny, nm, nd] = notifyDate.split('-');
-    const [nh, nmin] = notifyTime.split(':');
-    
-    const startDate = new Date(ny, nm-1, nd, nh, nmin);
-    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // +1 hour
-    
-    const icsStart = formatICSDate(startDate);
-    const icsEnd = formatICSDate(endDate);
-    
-    const title = `Pago: ${s.desc}`;
-    const details = `Importe a pagar: € ${fmt(s.amount)}\\nCategoría: ${getCat(s.category).label}`;
-    
-    icsContent.push(
-      'BEGIN:VEVENT',
-      `DTSTART:${icsStart}`,
-      `DTEND:${icsEnd}`,
-      `SUMMARY:${title}`,
-      `DESCRIPTION:${details}`,
-      'BEGIN:VALARM',
-      'TRIGGER:-PT0M',
-      'ACTION:DISPLAY',
-      'DESCRIPTION:Recordatorio de pago',
-      'END:VALARM',
-      'END:VEVENT'
-    );
-  });
-  
-  icsContent.push('END:VCALENDAR');
-  
-  const blob = new Blob([icsContent.join('\\r\\n')], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `todos_los_pagos.ics`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  
-  closeSheet('cloud-overlay');
-  toast('📅 Eventos descargados. Ábrelo para añadirlos.');
 }
 
 function markSchedPaid(id) {
@@ -3086,31 +2357,6 @@ function markSchedPaid(id) {
     amount: s.amount, desc: s.desc,
     category: s.category, date: s.date
   });
-  
-  if (s.recurrence && s.recurrence !== 'none') {
-    const currDate = new Date(s.date + 'T12:00:00');
-    if (s.recurrence === 'weekly') currDate.setDate(currDate.getDate() + 7);
-    else if (s.recurrence === 'monthly') currDate.setMonth(currDate.getMonth() + 1);
-    else if (s.recurrence === 'yearly') currDate.setFullYear(currDate.getFullYear() + 1);
-    
-    const nextDateStr = currDate.toISOString().slice(0,10);
-    
-    let nextNotifyDate = nextDateStr;
-    if (s.notifyDate && s.notifyDate !== s.date) {
-        const oD = new Date(s.date + 'T12:00:00');
-        const nD = new Date(s.notifyDate + 'T12:00:00');
-        const diffTime = nD - oD;
-        const nextN = new Date(currDate.getTime() + diffTime);
-        nextNotifyDate = nextN.toISOString().slice(0,10);
-    }
-    
-    scheduledPayments.push({
-        id: Date.now() + 1, desc: s.desc, amount: s.amount,
-        category: s.category, date: nextDateStr, paid: false,
-        notifyDate: nextNotifyDate, notifyTime: s.notifyTime, recurrence: s.recurrence
-    });
-  }
-  
   save();
   closeSheet('day-overlay');
   renderHome();
@@ -3120,12 +2366,10 @@ function markSchedPaid(id) {
 }
 
 function deleteSched(id) {
-  if (!id) id = editSchedId;
   if (!confirm('¿Eliminar este pago programado?')) return;
   scheduledPayments = scheduledPayments.filter(x => x.id !== id);
   save();
   closeSheet('day-overlay');
-  closeSheet('edit-sched-overlay');
   renderCalendar();
   renderOverdueAlerts();
   toast('🗑 Pago programado eliminado');
@@ -3338,105 +2582,6 @@ function seedDemo() {
 
   limits[`${y}-${m}`] = {...DEF_LIMITS};
   save();
-}
-
-/* ═══════════════════════════════════════════════════════════
-   CUSTOM CATEGORIES
-═══════════════════════════════════════════════════════════ */
-function openCatsSheet() {
-  document.getElementById('cats-overlay').classList.add('open');
-  renderCatsList();
-}
-
-function renderCatsList() {
-  const list = document.getElementById('cats-list');
-  if (!list) return;
-  if (customCategories.length === 0) {
-    list.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:10px;">No has creado ninguna categoría personalizada.</div>';
-    return;
-  }
-  list.innerHTML = customCategories.map(c => `
-    <div style="display:flex; align-items:center; background:var(--surface); padding:8px 12px; border-radius:var(--r); border:1px solid var(--border2); justify-content:space-between;">
-      <div style="display:flex; align-items:center; gap:10px;">
-        <span style="font-size:20px;">${c.e}</span>
-        <div>
-          <div style="font-size:14px; font-weight:600;">${c.label}</div>
-          <div style="font-size:10px; color:var(--muted);">${c.type === 'expense' ? 'Gasto' : 'Ingreso'}</div>
-        </div>
-      </div>
-      <button onclick="deleteCategory('${c.id}')" style="background:var(--red-bg); color:var(--red); border:none; padding:6px 10px; border-radius:6px; cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
-    </div>
-  `).join('');
-}
-
-function saveNewCategory() {
-  const emoji = document.getElementById('nc-emoji').value.trim();
-  const name = document.getElementById('nc-name').value.trim();
-  const color = document.getElementById('nc-color').value;
-  const type = document.getElementById('nc-type').value;
-
-  if (!emoji || !name) { toast('⚠ Rellena el icono y el nombre', false); return; }
-  
-  const id = 'custom_' + Date.now();
-  
-  customCategories.push({
-    id, label: name, e: emoji, c: color, bg: color + '22', type
-  });
-  
-  updateCats();
-  save();
-  renderCatsList();
-  
-  renderCatGrid();
-  renderEditCatGrid();
-  if (typeof renderSchedCatGrid === 'function') renderSchedCatGrid();
-  if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
-  
-  document.getElementById('nc-emoji').value = '';
-  document.getElementById('nc-name').value = '';
-  toast('✅ Categoría añadida');
-}
-
-function deleteCategory(id) {
-  if (!confirm('¿Borrar esta categoría? Si tienes movimientos con ella, podrían quedarse sin icono.')) return;
-  customCategories = customCategories.filter(c => c.id !== id);
-  updateCats();
-  save();
-  renderCatsList();
-  
-  renderCatGrid();
-  renderEditCatGrid();
-  if (typeof renderSchedCatGrid === 'function') renderSchedCatGrid();
-  if (document.getElementById('view-budget').classList.contains('active')) renderBudget();
-  toast('🗑 Categoría eliminada');
-}
-
-function exportToCSV() {
-  if (!transactions.length) { toast('⚠ No hay movimientos para exportar'); return; }
-  
-  let csv = 'Fecha,Tipo,Categoría,Descripción,Importe\\n';
-  const txs = [...transactions].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  
-  txs.forEach(t => {
-    const cat = getCat(t.category);
-    const typeLabel = t.type === 'expense' ? 'Gasto' : 'Ingreso';
-    const amount = (t.type === 'expense' ? '-' : '') + t.amount;
-    const safeDesc = t.desc.replace(/"/g, '""');
-    csv += `${t.date},${typeLabel},"${cat.label}","${safeDesc}",${amount}\\n`;
-  });
-  
-  const blob = new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `movimientos_${todayStr()}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  
-  toast('📄 CSV Exportado');
-  closeSheet('cloud-overlay');
 }
 
 /* ═══════════════════════════════════════════════════════════
