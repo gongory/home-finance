@@ -2984,6 +2984,7 @@ function addToDeviceCalendar() {
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
+    'METHOD:PUBLISH',
     'PRODID:-//Home Finance//App//ES',
     'BEGIN:VEVENT',
     `UID:${uid}`,
@@ -2999,23 +3000,17 @@ function addToDeviceCalendar() {
     'END:VALARM',
     'END:VEVENT',
     'END:VCALENDAR'
-  ].join('\\r\\n');
+  ].join('\r\n');
 
-  const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
-
-  if (isIOS) {
-    window.location.assign('data:text/calendar;charset=utf-8,' + encodeURIComponent(icsContent));
-  } else {
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pago_${s.id}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pago_${s.id}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
   
   toast('📅 Evento descargado. Ábrelo para añadirlo.');
 }
@@ -3030,6 +3025,7 @@ function exportAllToDeviceCalendar() {
   let icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
+    'METHOD:PUBLISH',
     'PRODID:-//Home Finance//App//ES'
   ];
   
@@ -3081,21 +3077,15 @@ function exportAllToDeviceCalendar() {
   icsContent.push('END:VCALENDAR');
   
   const icsStr = icsContent.join('\r\n');
-  const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
-
-  if (isIOS) {
-    window.location.assign('data:text/calendar;charset=utf-8,' + encodeURIComponent(icsStr));
-  } else {
-    const blob = new Blob([icsContent.join('\\r\\n')], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `todos_los_pagos.ics`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
+  const blob = new Blob([icsStr], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `todos_los_pagos.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
   
   closeSheet('cloud-overlay');
   toast('📅 Eventos descargados. Ábrelo para añadirlos.');
