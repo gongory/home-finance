@@ -2981,16 +2981,21 @@ function addToDeviceCalendar() {
   const dtstamp = formatICSDate(now);
   const uid = s.id + '-' + now.getTime() + '@homefinance.app';
   
-  const icsContent = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'METHOD:PUBLISH',
-    'PRODID:-//Home Finance//App//ES',
+  let rrule = '';
+  if (s.recurrence === 'weekly') rrule = 'RRULE:FREQ=WEEKLY';
+  else if (s.recurrence === 'monthly') rrule = 'RRULE:FREQ=MONTHLY';
+  else if (s.recurrence === 'yearly') rrule = 'RRULE:FREQ=YEARLY';
+
+  const eventLines = [
     'BEGIN:VEVENT',
     `UID:${uid}`,
     `DTSTAMP:${dtstamp}`,
     `DTSTART:${icsStart}`,
-    `DTEND:${icsEnd}`,
+    `DTEND:${icsEnd}`
+  ];
+  if (rrule) eventLines.push(rrule);
+  
+  eventLines.push(
     `SUMMARY:${title}`,
     `DESCRIPTION:${details}`,
     'BEGIN:VALARM',
@@ -2998,7 +3003,15 @@ function addToDeviceCalendar() {
     'ACTION:DISPLAY',
     'DESCRIPTION:Recordatorio de pago',
     'END:VALARM',
-    'END:VEVENT',
+    'END:VEVENT'
+  );
+
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'METHOD:PUBLISH',
+    'PRODID:-//Home Finance//App//ES',
+    ...eventLines,
     'END:VCALENDAR'
   ].join('\r\n');
 
@@ -3057,12 +3070,21 @@ function exportAllToDeviceCalendar() {
     const dtstamp = formatICSDate(now);
     const uid = s.id + '-' + now.getTime() + '@homefinance.app';
     
-    icsContent.push(
+    let rrule = '';
+    if (s.recurrence === 'weekly') rrule = 'RRULE:FREQ=WEEKLY';
+    else if (s.recurrence === 'monthly') rrule = 'RRULE:FREQ=MONTHLY';
+    else if (s.recurrence === 'yearly') rrule = 'RRULE:FREQ=YEARLY';
+    
+    const eventLines = [
       'BEGIN:VEVENT',
       `UID:${uid}`,
       `DTSTAMP:${dtstamp}`,
       `DTSTART:${icsStart}`,
-      `DTEND:${icsEnd}`,
+      `DTEND:${icsEnd}`
+    ];
+    if (rrule) eventLines.push(rrule);
+    
+    eventLines.push(
       `SUMMARY:${title}`,
       `DESCRIPTION:${details}`,
       'BEGIN:VALARM',
@@ -3072,6 +3094,8 @@ function exportAllToDeviceCalendar() {
       'END:VALARM',
       'END:VEVENT'
     );
+    
+    icsContent.push(...eventLines);
   });
   
   icsContent.push('END:VCALENDAR');
