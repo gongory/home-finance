@@ -2105,16 +2105,9 @@ async function loginWithGoogle() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
     setSyncDot('syncing');
-    
-    // En desarrollo local es mejor usar popup (evita problemas de redirect con Live Server)
-    const hn = window.location.hostname;
-    if (hn === 'localhost' || hn === '127.0.0.1') {
-      await fbAuth.signInWithPopup(provider);
-      closeSheet('cloud-overlay');
-      toast('✅ Sesión iniciada correctamente');
-    } else {
-      await fbAuth.signInWithRedirect(provider);
-    }
+    await fbAuth.signInWithPopup(provider);
+    closeSheet('cloud-overlay');
+    toast('✅ Sesión iniciada correctamente');
   } catch(e) {
     setSyncDot('error');
     toast('❌ Error al iniciar sesión: ' + e.message, false);
