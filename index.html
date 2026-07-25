@@ -1993,6 +1993,17 @@ function initFirebase() {
     fbAuth = firebase.auth();
     fbDb   = firebase.firestore();
 
+    fbAuth.getRedirectResult().then(result => {
+      if (result && result.user) {
+        closeSheet('cloud-overlay');
+        toast('✅ Sesión iniciada correctamente');
+      }
+    }).catch(e => {
+      setSyncDot('error');
+      console.warn('Redirect error:', e);
+      toast('❌ Error al iniciar sesión: ' + e.message, false);
+    });
+
     fbAuth.onAuthStateChanged(user => {
       const wasLoggedIn = (currentUser !== null);
       currentUser = user;
@@ -2094,9 +2105,16 @@ async function loginWithGoogle() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
     setSyncDot('syncing');
-    await fbAuth.signInWithPopup(provider);
-    closeSheet('cloud-overlay');
-    toast('✅ Sesión iniciada correctamente');
+    
+    // En desarrollo local es mejor usar popup (evita problemas de redirect con Live Server)
+    const hn = window.location.hostname;
+    if (hn === 'localhost' || hn === '127.0.0.1') {
+      await fbAuth.signInWithPopup(provider);
+      closeSheet('cloud-overlay');
+      toast('✅ Sesión iniciada correctamente');
+    } else {
+      await fbAuth.signInWithRedirect(provider);
+    }
   } catch(e) {
     setSyncDot('error');
     toast('❌ Error al iniciar sesión: ' + e.message, false);
@@ -2981,21 +2999,16 @@ function addToDeviceCalendar() {
   const dtstamp = formatICSDate(now);
   const uid = s.id + '-' + now.getTime() + '@homefinance.app';
   
-  let rrule = '';
-  if (s.recurrence === 'weekly') rrule = 'RRULE:FREQ=WEEKLY';
-  else if (s.recurrence === 'monthly') rrule = 'RRULE:FREQ=MONTHLY';
-  else if (s.recurrence === 'yearly') rrule = 'RRULE:FREQ=YEARLY';
-
-  const eventLines = [
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'METHOD:PUBLISH',
+    'PRODID:-//Home Finance//App//ES',
     'BEGIN:VEVENT',
     `UID:${uid}`,
     `DTSTAMP:${dtstamp}`,
     `DTSTART:${icsStart}`,
-    `DTEND:${icsEnd}`
-  ];
-  if (rrule) eventLines.push(rrule);
-  
-  eventLines.push(
+    `DTEND:${icsEnd}`,
     `SUMMARY:${title}`,
     `DESCRIPTION:${details}`,
     'BEGIN:VALARM',
@@ -3003,15 +3016,7 @@ function addToDeviceCalendar() {
     'ACTION:DISPLAY',
     'DESCRIPTION:Recordatorio de pago',
     'END:VALARM',
-    'END:VEVENT'
-  );
-
-  const icsContent = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'METHOD:PUBLISH',
-    'PRODID:-//Home Finance//App//ES',
-    ...eventLines,
+    'END:VEVENT',
     'END:VCALENDAR'
   ].join('\r\n');
 
@@ -3070,21 +3075,12 @@ function exportAllToDeviceCalendar() {
     const dtstamp = formatICSDate(now);
     const uid = s.id + '-' + now.getTime() + '@homefinance.app';
     
-    let rrule = '';
-    if (s.recurrence === 'weekly') rrule = 'RRULE:FREQ=WEEKLY';
-    else if (s.recurrence === 'monthly') rrule = 'RRULE:FREQ=MONTHLY';
-    else if (s.recurrence === 'yearly') rrule = 'RRULE:FREQ=YEARLY';
-    
-    const eventLines = [
+    icsContent.push(
       'BEGIN:VEVENT',
       `UID:${uid}`,
       `DTSTAMP:${dtstamp}`,
       `DTSTART:${icsStart}`,
-      `DTEND:${icsEnd}`
-    ];
-    if (rrule) eventLines.push(rrule);
-    
-    eventLines.push(
+      `DTEND:${icsEnd}`,
       `SUMMARY:${title}`,
       `DESCRIPTION:${details}`,
       'BEGIN:VALARM',
@@ -3094,8 +3090,6 @@ function exportAllToDeviceCalendar() {
       'END:VALARM',
       'END:VEVENT'
     );
-    
-    icsContent.push(...eventLines);
   });
   
   icsContent.push('END:VCALENDAR');
