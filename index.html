@@ -1213,8 +1213,11 @@
         <input class="inp" type="date" id="ef-date" />
       </div>
 
-      <button class="btn-save" onclick="updateTransaction()">
+      <button class="btn-save" onclick="updateTransaction()" style="margin-bottom: 10px;">
         <i class="fa-solid fa-check" style="margin-right:7px;"></i>Guardar cambios
+      </button>
+      <button class="btn-save" id="btn-copy-tx" onclick="copyTransactionToOtherAccount()" style="display:none; background:linear-gradient(135deg,#8b5cf6,#7c3aed); box-shadow:0 4px 16px rgba(124,58,237,.35); margin-bottom: 10px;">
+        <i class="fa-solid fa-copy" style="margin-right:7px;"></i>Copiar a familia
       </button>
       <button class="btn-delete" onclick="deleteTransaction()">
         <i class="fa-solid fa-trash" style="margin-right:7px;"></i>Eliminar transacción
@@ -1433,6 +1436,13 @@
           </div>
         </div>
         <div class="help-item">
+          <span class="help-item-ico">📋</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Copiar entre cuentas</div>
+            <div class="help-item-desc">Si usas una cuenta familiar, edita un movimiento para ver el botón de copiar de tu cuenta privada a la familiar (y viceversa).</div>
+          </div>
+        </div>
+        <div class="help-item">
           <span class="help-item-ico">🏠</span>
           <div class="help-item-text">
             <div class="help-item-title">Nombre del hogar</div>
@@ -1578,13 +1588,23 @@
       <div class="app-version-card">
         <span class="app-ver-logo">🏠</span>
         <div class="app-ver-name">Home Finance</div>
-        <div class="app-ver-badge">v1.05</div>
+        <div class="app-ver-badge">v1.07</div>
         <div class="app-ver-date">Julio 2026 · Desarrollado para uso familiar</div>
       </div>
 
       <!-- Changelog -->
       <div class="changelog-title">
         <i class="fa-solid fa-clock-rotate-left"></i> Historial de cambios
+      </div>
+
+      <!-- v1.07 -->
+      <div class="cl-entry">
+        <div class="cl-version">Versión 1.07</div>
+        <div class="cl-date">Julio 2026 — Copiado de Movimientos</div>
+        <div class="cl-change">
+          <span class="cl-change-ico">📋</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Copiar transacciones:</strong> Copia movimientos de tu cuenta privada a la familiar (y viceversa) con un solo toque.</span>
+        </div>
       </div>
 
       <!-- v1.06 -->
@@ -1692,7 +1712,7 @@
       </div>
 
       <div class="info-footer">
-        🏠 Home Finance · v1.05<br>
+        🏠 Home Finance · v1.07<br>
         Datos guardados en tu dispositivo y en la nube
       </div>
 
@@ -3221,6 +3241,18 @@ function openEditSheet(id) {
   editSelCat = tx.category;
   renderEditCatGrid();
 
+  const copyBtn = document.getElementById('btn-copy-tx');
+  if (knownFamilyId) {
+    copyBtn.style.display = 'block';
+    if (currentFamilyId) {
+      copyBtn.innerHTML = '<i class="fa-solid fa-copy" style="margin-right:7px;"></i>Copiar a cuenta privada';
+    } else {
+      copyBtn.innerHTML = '<i class="fa-solid fa-copy" style="margin-right:7px;"></i>Copiar a familia';
+    }
+  } else {
+    copyBtn.style.display = 'none';
+  }
+
   document.getElementById('edit-overlay').classList.add('open');
 }
 
@@ -3272,6 +3304,49 @@ function deleteTransaction() {
   closeSheet('edit-overlay');
   renderHome();
   toast('🗑 Transacción eliminada');
+}
+
+async function copyTransactionToOtherAccount() {
+  if (!knownFamilyId) return;
+  if (!currentUser) {
+    toast('⚠ Inicia sesión en la nube primero', false);
+    return;
+  }
+  const tx = transactions.find(t => t.id === editingTxId);
+  if (!tx) return;
+
+  const newTx = { ...tx, id: Date.now() };
+  let targetRef;
+  
+  if (currentFamilyId) {
+    targetRef = fbDb.collection('users').doc(currentUser.uid);
+  } else {
+    targetRef = fbDb.collection('families').doc(knownFamilyId);
+  }
+  
+  setSyncDot('syncing');
+  toast('Copiando movimiento...');
+  
+  try {
+    const doc = await targetRef.get();
+    let targetTransactions = [];
+    if (doc.exists) {
+      targetTransactions = doc.data().transactions || [];
+    }
+    targetTransactions.push(newTx);
+    await targetRef.set({
+      transactions: targetTransactions,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    
+    setSyncDot('synced');
+    closeSheet('edit-overlay');
+    toast('✅ Movimiento copiado con éxito');
+  } catch (e) {
+    setSyncDot('error');
+    console.error(e);
+    toast('❌ Error al copiar', false);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
