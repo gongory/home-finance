@@ -1216,8 +1216,11 @@
       <button class="btn-save" onclick="updateTransaction()" style="margin-bottom: 10px;">
         <i class="fa-solid fa-check" style="margin-right:7px;"></i>Guardar cambios
       </button>
-      <button class="btn-save" id="btn-copy-tx" onclick="copyTransactionToOtherAccount()" style="display:none; background:linear-gradient(135deg,#8b5cf6,#7c3aed); box-shadow:0 4px 16px rgba(124,58,237,.35); margin-bottom: 10px;">
+      <button class="btn-save" id="btn-copy-tx" onclick="copyTransactionToOtherAccount()" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed); box-shadow:0 4px 16px rgba(124,58,237,.35); margin-bottom: 10px;">
         <i class="fa-solid fa-copy" style="margin-right:7px;"></i>Copiar a familia
+      </button>
+      <button class="btn-save" onclick="scheduleFromEdit()" style="background:linear-gradient(135deg,#2563eb,#3b82f6); box-shadow:0 4px 16px rgba(59,130,246,.35); margin-bottom: 10px;">
+        <i class="fa-solid fa-clock" style="margin-right:7px;"></i>Programar como pago futuro
       </button>
       <button class="btn-delete" onclick="deleteTransaction()">
         <i class="fa-solid fa-trash" style="margin-right:7px;"></i>Eliminar transacción
@@ -1505,7 +1508,14 @@
           <span class="help-item-ico">🔁</span>
           <div class="help-item-text">
             <div class="help-item-title">Pagos Recurrentes</div>
-            <div class="help-item-desc">Al programar un pago, elige "Repetir" para que, al pagarlo, se vuelva a crear automáticamente el mes o semana siguiente.</div>
+            <div class="help-item-desc">Al programar un pago, elige "Repetir" para que se genere cíclicamente.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <span class="help-item-ico">🔮</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Proyección de pagos futuros</div>
+            <div class="help-item-desc">Al navegar por próximos meses, la app proyecta automáticamente tus pagos recurrentes con un icono 🔒. Paga o edita la fecha original para confirmarlos.</div>
           </div>
         </div>
         <div class="help-item">
@@ -1519,7 +1529,7 @@
           <span class="help-item-ico">⏰</span>
           <div class="help-item-text">
             <div class="help-item-title">Programar un pago futuro</div>
-            <div class="help-item-desc">Toca un día y pulsa <span class="help-badge">+ Programar</span>. Rellena importe, descripción y categoría. El pago aparecerá en amarillo en el calendario.</div>
+            <div class="help-item-desc">Toca un día en el calendario y pulsa <span class="help-badge">+ Programar</span>. También puedes crearlo automáticamente tocando el botón azul al <strong>editar cualquier gasto</strong>.</div>
           </div>
         </div>
         <div class="help-item">
@@ -2933,19 +2943,32 @@ function openAddSchedFromPanel() {
 /* ═══════════════════════════════════════════════════════════
    SCHEDULED PAYMENTS
 ═══════════════════════════════════════════════════════════ */
-function openAddSchedSheet(dateStr) {
+function openAddSchedSheet(dateStr, prefill = null) {
   panelDate = dateStr;
-  document.getElementById('sf-amount').value = '';
-  document.getElementById('sf-desc').value   = '';
+  document.getElementById('sf-amount').value = prefill ? prefill.amount : '';
+  document.getElementById('sf-desc').value   = prefill ? prefill.desc : '';
   document.getElementById('sf-notify-date').value = dateStr;
   document.getElementById('sf-notify-time').value = '09:00';
   const d = new Date(dateStr+'T12:00:00');
   document.getElementById('sched-date-label').textContent =
     `Para el ${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
-  schedSelCat = 'hogar';
+  schedSelCat = prefill ? prefill.category : 'hogar';
   renderSchedCatGrid();
   document.getElementById('sched-overlay').classList.add('open');
   setTimeout(() => document.getElementById('sf-amount').focus(), 360);
+}
+
+function scheduleFromEdit() {
+  const tx = transactions.find(t => t.id === editingTxId);
+  if (!tx) return;
+  closeSheet('edit-overlay');
+  setTimeout(() => {
+    openAddSchedSheet(tx.date, {
+      amount: tx.amount,
+      desc: tx.desc,
+      category: tx.category
+    });
+  }, 300);
 }
 
 function renderSchedCatGrid() {
@@ -3300,15 +3323,10 @@ function openEditSheet(id) {
   renderEditCatGrid();
 
   const copyBtn = document.getElementById('btn-copy-tx');
-  if (knownFamilyId) {
-    copyBtn.style.display = 'block';
-    if (currentFamilyId) {
-      copyBtn.innerHTML = '<i class="fa-solid fa-copy" style="margin-right:7px;"></i>Copiar a cuenta privada';
-    } else {
-      copyBtn.innerHTML = '<i class="fa-solid fa-copy" style="margin-right:7px;"></i>Copiar a familia';
-    }
+  if (currentFamilyId) {
+    copyBtn.innerHTML = '<i class="fa-solid fa-copy" style="margin-right:7px;"></i>Copiar a cuenta privada';
   } else {
-    copyBtn.style.display = 'none';
+    copyBtn.innerHTML = '<i class="fa-solid fa-copy" style="margin-right:7px;"></i>Copiar a familia';
   }
 
   document.getElementById('edit-overlay').classList.add('open');
@@ -3365,7 +3383,10 @@ function deleteTransaction() {
 }
 
 async function copyTransactionToOtherAccount() {
-  if (!knownFamilyId) return;
+  if (!knownFamilyId) {
+    toast('⚠ No tienes una cuenta familiar vinculada', false);
+    return;
+  }
   if (!currentUser) {
     toast('⚠ Inicia sesión en la nube primero', false);
     return;
