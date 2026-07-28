@@ -1903,6 +1903,7 @@ let scheduledPayments = [];          // { id, desc, amount, category, date, paid
 let homeName          = 'Home Finance 🏠';
 let currentFamilyId   = null;
 let knownFamilyId     = null;
+let knownFamilies     = [];
 let isDarkMode        = true;
 let txType            = 'expense';
 let selCat            = 'alimentacion';
@@ -1929,6 +1930,8 @@ function load() {
     homeName          = localStorage.getItem('hf2_name') || 'Home Finance 🏠';
     currentFamilyId   = localStorage.getItem('hf2_family') || null;
     knownFamilyId     = localStorage.getItem('hf2_known_family') || currentFamilyId;
+    knownFamilies     = JSON.parse(localStorage.getItem('hf2_families') || '[]');
+    if (knownFamilyId && knownFamilies.length === 0) knownFamilies.push(knownFamilyId);
     const savedTheme  = localStorage.getItem('hf2_theme');
     isDarkMode        = savedTheme === null ? true : savedTheme === 'dark';
     updateCats();
@@ -1944,6 +1947,7 @@ function saveLocal() {
   else localStorage.removeItem('hf2_family');
   if (knownFamilyId) localStorage.setItem('hf2_known_family', knownFamilyId);
   else localStorage.removeItem('hf2_known_family');
+  localStorage.setItem('hf2_families', JSON.stringify(knownFamilies));
   localStorage.setItem('hf2_theme', isDarkMode ? 'dark' : 'light');
 }
 
@@ -2175,33 +2179,40 @@ function updateFamilyUI() {
   
   if (!badge) return;
 
-  if (knownFamilyId) {
+  if (knownFamilies.length > 0) {
     toggleGrp.style.display = 'flex';
-    codeDisp.style.display = 'block';
-    codeDisp.textContent = `Código: ${knownFamilyId}`;
-    btnCreate.style.display = 'none';
-    btnJoin.style.display = 'none';
-    btnLeave.style.display = 'block';
+    toggleGrp.style.flexDirection = 'column';
+    codeDisp.style.display = currentFamilyId ? 'block' : 'none';
+    if (currentFamilyId) codeDisp.textContent = `Código: ${currentFamilyId}`;
+    
+    btnCreate.style.display = 'block';
+    btnJoin.style.display = 'block';
+    btnLeave.style.display = currentFamilyId ? 'block' : 'none';
 
     if (currentFamilyId) {
       badge.style.display = 'inline-block';
       badge.textContent = 'Modo Familia';
       badge.style.background = 'var(--green-bg)';
       badge.style.color = 'var(--green)';
-      btnFam.style.background = 'var(--accent)';
-      btnFam.style.color = 'white';
-      btnPers.style.background = 'transparent';
-      btnPers.style.color = 'var(--faint)';
     } else {
       badge.style.display = 'inline-block';
       badge.textContent = 'Modo Privado';
       badge.style.background = 'var(--red-bg)';
       badge.style.color = 'var(--red)';
-      btnPers.style.background = 'var(--accent)';
-      btnPers.style.color = 'white';
-      btnFam.style.background = 'transparent';
-      btnFam.style.color = 'var(--faint)';
     }
+
+    let html = `<button onclick="toggleFamilyView('personal')" style="padding: 10px; border-radius: 6px; background: ${currentFamilyId === null ? 'var(--accent)' : 'transparent'}; color: ${currentFamilyId === null ? 'white' : 'var(--faint)'}; border: none; font-size: 13px; font-weight: 600; text-align: left; transition: all 0.2s; margin-bottom: 4px;">👤 Cuenta Privada</button>`;
+    
+    knownFamilies.forEach(code => {
+      html += `<div style="display:flex; gap: 4px; margin-bottom: 4px;">
+        <button onclick="toggleFamilyView('${code}')" style="flex:1; padding: 10px; border-radius: 6px; background: ${currentFamilyId === code ? 'var(--accent)' : 'transparent'}; color: ${currentFamilyId === code ? 'white' : 'var(--faint)'}; border: none; font-size: 13px; font-weight: 600; text-align: left; transition: all 0.2s;">👨‍👩‍👧‍👦 Familia: ${code}</button>
+        <button onclick="removeKnownFamily('${code}')" style="padding: 10px; border-radius: 6px; background: rgba(244,63,94,.1); color: var(--red); border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>`;
+    });
+    toggleGrp.innerHTML = html;
+
   } else {
     toggleGrp.style.display = 'none';
     badge.style.display = 'none';
@@ -2212,12 +2223,24 @@ function updateFamilyUI() {
   }
 }
 
+function removeKnownFamily(code) {
+  if (!confirm("¿Olvidar esta cuenta familiar? (Podrás volver a unirte con el código)")) return;
+  knownFamilies = knownFamilies.filter(c => c !== code);
+  if (currentFamilyId === code) {
+    toggleFamilyView('personal');
+  } else {
+    saveLocal();
+    updateFamilyUI();
+  }
+}
+
 async function toggleFamilyView(mode) {
-  if (mode === 'family' && currentFamilyId === knownFamilyId) return;
+  if (mode !== 'personal' && currentFamilyId === mode) return;
   if (mode === 'personal' && currentFamilyId === null) return;
 
-  if (mode === 'family') {
-    currentFamilyId = knownFamilyId;
+  if (mode !== 'personal') {
+    currentFamilyId = mode;
+    knownFamilyId = mode;
     toast('Cambiando a cuenta familiar...');
   } else {
     currentFamilyId = null;
@@ -2245,6 +2268,7 @@ async function generateFamilyCode() {
   const code = Math.random().toString(36).substring(2, 8).toUpperCase();
   currentFamilyId = code;
   knownFamilyId = code;
+  if (!knownFamilies.includes(code)) knownFamilies.push(code);
   
   transactions = [];
   scheduledPayments = [];
@@ -2270,6 +2294,7 @@ async function joinFamily() {
   if (!code || code.trim().length < 3) return;
   currentFamilyId = code.trim().toUpperCase();
   knownFamilyId = currentFamilyId;
+  if (!knownFamilies.includes(currentFamilyId)) knownFamilies.push(currentFamilyId);
   
   transactions = [];
   scheduledPayments = [];
@@ -2290,8 +2315,9 @@ async function joinFamily() {
 
 async function leaveFamily() {
   if (!confirm("¿Seguro que quieres DESVINCULARTE completamente de esta familia?")) return;
+  knownFamilies = knownFamilies.filter(c => c !== currentFamilyId);
   currentFamilyId = null;
-  knownFamilyId = null;
+  knownFamilyId = knownFamilies.length > 0 ? knownFamilies[0] : null;
   
   transactions = [];
   scheduledPayments = [];
