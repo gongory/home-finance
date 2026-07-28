@@ -1009,6 +1009,7 @@
     <button class="tab active" id="tab-home"     onclick="goTab('home',     this)"><i class="fa-solid fa-list"></i>Movimientos</button>
     <button class="tab"        id="tab-budget"   onclick="goTab('budget',   this)"><i class="fa-solid fa-chart-pie"></i>Presupuesto</button>
     <button class="tab"        id="tab-stats"    onclick="goTab('stats',    this)"><i class="fa-solid fa-chart-simple"></i>Estadísticas</button>
+    <button class="tab"        id="tab-annual"   onclick="goTab('annual',   this)"><i class="fa-solid fa-scale-balanced"></i>Balance</button>
     <button class="tab"        id="tab-calendar" onclick="goTab('calendar', this)"><i class="fa-solid fa-calendar-days"></i>Calendario</button>
   </div>
 
@@ -1072,6 +1073,45 @@
       </div>
       
       <div id="stats-list" class="budget-list"></div>
+    </div>
+
+    <!-- VIEW: BALANCE ANUAL -->
+    <div class="view" id="view-annual">
+      <!-- Nav -->
+      <div class="cal-nav" style="margin-bottom: 12px;">
+        <button class="cal-nav-btn" onclick="changeAnnualYear(-1)" aria-label="Año anterior">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="cal-month-label" id="annual-year-label">2026</span>
+        <button class="cal-nav-btn" onclick="changeAnnualYear(1)" aria-label="Año siguiente">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <!-- Summary -->
+      <div class="budget-summary">
+        <div class="bsum-card">
+          <div class="bsum-val green" id="annual-inc">€ 0</div>
+          <div class="bsum-label">Ingresos</div>
+        </div>
+        <div class="bsum-card">
+          <div class="bsum-val red" id="annual-exp">€ 0</div>
+          <div class="bsum-label">Gastos</div>
+        </div>
+        <div class="bsum-card">
+          <div class="bsum-val violet" id="annual-sav">€ 0</div>
+          <div class="bsum-label">Ahorro</div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:16px; margin-bottom:16px; min-height: 180px;">
+        <canvas id="annualChart" width="300" height="150" style="width:100%; max-height:150px;"></canvas>
+      </div>
+
+      <div class="sec-header" style="margin-bottom:10px;">
+        <span class="sec-title">Mes a mes</span>
+      </div>
+      <div class="budget-list" id="annual-list"></div>
     </div>
 
     <!-- VIEW: CALENDARIO -->
@@ -1494,6 +1534,13 @@
           </div>
         </div>
         <div class="help-item">
+          <span class="help-item-ico">⚖️</span>
+          <div class="help-item-text">
+            <div class="help-item-title">Balance Anual</div>
+            <div class="help-item-desc">En la pestaña <span class="help-badge">Balance</span> puedes ver tus ingresos y gastos de todo el año, con un gráfico comparativo mes a mes.</div>
+          </div>
+        </div>
+        <div class="help-item">
           <span class="help-item-ico">🔴🟢🟡</span>
           <div class="help-item-text">
             <div class="help-item-title">Puntos de color en los días</div>
@@ -1610,10 +1657,14 @@
       <!-- v1.07 -->
       <div class="cl-entry">
         <div class="cl-version">Versión 1.07</div>
-        <div class="cl-date">Julio 2026 — Copiado de Movimientos</div>
+        <div class="cl-date">Julio 2026 — Copiado de Movimientos y Balance</div>
         <div class="cl-change">
           <span class="cl-change-ico">📋</span>
           <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Copiar transacciones:</strong> Copia movimientos de tu cuenta privada a la familiar (y viceversa) con un solo toque.</span>
+        </div>
+        <div class="cl-change">
+          <span class="cl-change-ico">⚖️</span>
+          <span class="cl-change-text"><span class="cl-tag new">NUEVO</span><strong>Balance Anual:</strong> Nueva pestaña con gráfico de ingresos vs gastos y el desglose mes a mes del año.</span>
         </div>
       </div>
 
@@ -2494,6 +2545,7 @@ function goTab(id, btn) {
   document.getElementById('view-'+id).classList.add('active');
   if (id==='budget')   renderBudget();
   if (id==='stats')    renderStats();
+  if (id==='annual')   renderAnnual();
   if (id==='calendar') renderCalendar();
 }
 
@@ -2713,6 +2765,149 @@ function renderStats() {
             }
           }
         }
+      }
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VIEW: BALANCE ANUAL
+═══════════════════════════════════════════════════════════ */
+let currentAnnualYear = new Date().getFullYear();
+let annualChartInstance = null;
+
+function changeAnnualYear(delta) {
+  currentAnnualYear += delta;
+  renderAnnual();
+}
+
+function renderAnnual() {
+  document.getElementById('annual-year-label').textContent = currentAnnualYear;
+  
+  const txs = transactions.filter(t => t.date.startsWith(currentAnnualYear.toString()));
+  
+  let totalInc = 0;
+  let totalExp = 0;
+  
+  const monthData = {};
+  for(let i=1; i<=12; i++) {
+    const mm = i.toString().padStart(2, '0');
+    monthData[mm] = { inc: 0, exp: 0 };
+  }
+  
+  txs.forEach(t => {
+    const mm = t.date.split('-')[1];
+    if (monthData[mm]) {
+      if (t.type === 'income') {
+        monthData[mm].inc += t.amount;
+        totalInc += t.amount;
+      } else {
+        monthData[mm].exp += t.amount;
+        totalExp += t.amount;
+      }
+    }
+  });
+  
+  document.getElementById('annual-inc').textContent = '€ ' + fmt(totalInc);
+  document.getElementById('annual-exp').textContent = '€ ' + fmt(totalExp);
+  document.getElementById('annual-sav').textContent = '€ ' + fmt(Math.max(0, totalInc - totalExp));
+  
+  const listEl = document.getElementById('annual-list');
+  let listHtml = '';
+  
+  const monthLabels = [];
+  const incData = [];
+  const expData = [];
+  
+  for(let i=1; i<=12; i++) {
+    const mm = i.toString().padStart(2, '0');
+    monthLabels.push(MESES[i-1].substring(0,3));
+    incData.push(monthData[mm].inc);
+    expData.push(monthData[mm].exp);
+  }
+  
+  let hasData = false;
+  for(let i=12; i>=1; i--) {
+    const mm = i.toString().padStart(2, '0');
+    const d = monthData[mm];
+    if (d.inc === 0 && d.exp === 0 && currentAnnualYear === new Date().getFullYear() && i > new Date().getMonth()+1) {
+      continue;
+    }
+    hasData = true;
+    const sav = d.inc - d.exp;
+    const savColor = sav >= 0 ? 'var(--green)' : 'var(--red)';
+    listHtml += `
+      <div class="tx-item" style="cursor:default;">
+        <div class="tx-icon" style="background:var(--bg);border:1px solid var(--border);font-size:14px;">
+          ${MESES[i-1].substring(0,3)}
+        </div>
+        <div class="tx-info">
+          <div class="tx-name" style="text-transform:capitalize">${MESES[i-1]}</div>
+          <div class="tx-meta">
+             <span style="color:var(--green)">↑ ${fmt(d.inc)}</span> &nbsp; 
+             <span style="color:var(--red)">↓ ${fmt(d.exp)}</span>
+          </div>
+        </div>
+        <div class="tx-amount" style="color:${savColor}">€ ${fmt(sav)}</div>
+      </div>
+    `;
+  }
+  
+  if (!hasData) {
+    listHtml = '<div class="empty"><h4>Sin datos en este año</h4></div>';
+  }
+  listEl.innerHTML = listHtml;
+  
+  const ctx = document.getElementById('annualChart');
+  if (!ctx) return;
+  if (annualChartInstance) annualChartInstance.destroy();
+  
+  annualChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: monthLabels,
+      datasets: [
+        {
+          label: 'Ingresos',
+          data: incData,
+          backgroundColor: '#10b981',
+          borderRadius: 4
+        },
+        {
+          label: 'Gastos',
+          data: expData,
+          backgroundColor: '#f43f5e',
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { display: false, drawBorder: false }, ticks: { color: '#8b949e', font: { size: 10 } } },
+        y: { grid: { color: '#30363d', drawBorder: false }, ticks: { color: '#8b949e', font: { size: 10 } }, beginAtZero: true }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#161b22',
+          titleColor: '#e6edf3',
+          bodyColor: '#e6edf3',
+          borderColor: '#30363d',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ': € ' + fmt(context.raw);
+            }
+          }
+        }
+      },
+      interaction: {
+        mode: 'index',
+        intersect: false
       }
     }
   });
